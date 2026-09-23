@@ -1717,20 +1717,24 @@ const openMoveItemPicker = (cid, iid) => {
   const sameTypeCards = cards.filter(x => x.type === c.type && x.id !== cid && !x.locked && x.type !== "header");
   let h = "";
   if (!sameTypeCards.length) {
-    h += `<div style="text-align:center;padding:30px 16px;color:var(--mt);font-size:12px">
+    h += `<div style="text-align:center;padding:20px 16px;color:var(--mt);font-size:12px">
       <div style="font-size:40px;margin-bottom:10px">📭</div>
       <div style="font-weight:700;margin-bottom:6px">No other ${c.type} cards</div>
-      <div>Create a new ${c.type} card first</div>
+      <div>Create a new one below</div>
     </div>`;
   } else {
     sameTypeCards.forEach(tc => {
-      h += `<div class="move-card-item" onclick="doMoveItemToCard('${tc.id}')">
+      h += `<div class="move-card-item" onclick="doMoveItemToCard(${tc.id})">
         <span class="ic">${tc.icon || (c.type === 'link' ? '🔗' : '📝')}</span>
         <span class="nm">${esc(tc.name)}</span>
         <span class="cnt">${tc.items.length} item${tc.items.length !== 1 ? 's' : ''}</span>
       </div>`;
     });
   }
+  h += `<div class="move-card-item" onclick="moveItemToNewCard()" style="border:1.5px dashed var(--p);background:transparent">
+    <span class="ic">➕</span>
+    <span class="nm" style="color:var(--p)">Create New ${c.type === 'link' ? 'Links' : 'Notes'} Card</span>
+  </div>`;
   picker.innerHTML = h;
   $("moveItemOv").classList.add("on");
 };
@@ -1738,11 +1742,13 @@ const moveItemCl = () => $("moveItemOv").classList.remove("on");
 $("moveItemOv").onclick = e => e.target.id === "moveItemOv" && moveItemCl();
 window.doMoveItemToCard = (targetCid) => {
   const { cid, iid } = moveItemCur;
+  const tCid = parseInt(targetCid);
   const srcCard = cards.find(x => x.id === cid);
-  const tgtCard = cards.find(x => x.id === targetCid);
-  if (!srcCard || !tgtCard) return;
+  const tgtCard = cards.find(x => x.id === tCid);
+  if (!srcCard || !tgtCard) { toast("Card not found"); moveItemCl(); return; }
+  if (srcCard.id === tgtCard.id) { toast("Same card"); moveItemCl(); return; }
   const idx = srcCard.items.findIndex(x => x.id === iid);
-  if (idx < 0) return;
+  if (idx < 0) { toast("Item not found"); moveItemCl(); return; }
   const it = srcCard.items[idx];
   if (srcCard.locked || it.locked || tgtCard.locked) { toast("Locked — cannot move"); moveItemCl(); return; }
   srcCard.items.splice(idx, 1);
@@ -1751,14 +1757,65 @@ window.doMoveItemToCard = (targetCid) => {
   srcCard.updated = Date.now();
   tgtCard.updated = Date.now();
   moveItemCl();
-  save(); render();
-  toast(`Moved to "${tgtCard.name}"`);
-  pushUndo(`Move "${it.title}" to ${tgtCard.name}`, () => {
+  save();
+  render();
+  toast("Moved to \"" + tgtCard.name + "\"");
+  pushUndo("Move \"" + it.title + "\" to " + tgtCard.name, () => {
     const ti = tgtCard.items.findIndex(x => x.id === iid);
     if (ti >= 0) {
       const [moved] = tgtCard.items.splice(ti, 1);
       srcCard.items.splice(idx, 0, moved);
-      save(); render();
+      save();
+      render();
+    }
+  });
+};
+window.moveItemToNewCard = () => {
+  const { cid, iid } = moveItemCur;
+  const srcCard = cards.find(x => x.id === cid);
+  if (!srcCard) { toast("Source card not found"); return; }
+  const it = srcCard.items.findIndex(x => x.id === iid);
+  if (it < 0) { toast("Item not found"); return; }
+  const item = srcCard.items[it];
+  const cardType = srcCard.type;
+  const defaultName = prompt("New " + (cardType === 'link' ? 'Links' : 'Notes') + " card name:", cardType === 'link' ? 'New Links' : 'New Notes');
+  if (!defaultName || !defaultName.trim()) return;
+  const newCard = {
+    id: Date.now(),
+    type: cardType,
+    name: defaultName.trim(),
+    icon: cardType === 'link' ? '🔗' : '📝',
+    subtitle: '',
+    tags: [],
+    folderId: srcCard.folderId || null,
+    color: '',
+    colorOpacity: 70,
+    items: [item],
+    collapsed: false,
+    pinned: false,
+    pinBottom: false,
+    pinPriority: 0,
+    fav: false,
+    hidden: false,
+    snoozeUntil: 0,
+    locked: false,
+    updated: Date.now()
+  };
+  srcCard.items.splice(it, 1);
+  srcCard.updated = Date.now();
+  cards.push(newCard);
+  moveItemCl();
+  save();
+  render();
+  toast("Moved to new card \"" + newCard.name + "\"");
+  pushUndo("Move to new card " + newCard.name, () => {
+    const nci = cards.findIndex(x => x.id === newCard.id);
+    if (nci >= 0) {
+      const [movedItem] = newCard.items.splice(0, 1);
+      srcCard.items.push(movedItem);
+      cards.splice(nci, 1);
+      save();
+      render();
     }
   });
 };
