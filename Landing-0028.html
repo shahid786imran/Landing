@@ -2114,11 +2114,16 @@ render = () => {
     const groupByFolder = (currentFolder === "all" && currentFilter === "all" && settings.showFolders);
     if (groupByFolder) {
       let html = "";
-      folders.forEach(f => {
-        const folderCards = list.filter(c => c.folderId === f.id);
-        if (!folderCards.length) return;
-        html += renderFolderGroup(f, folderCards);
-      });
+const sortedFolders = folders.slice().sort((a, b) => {
+  if (a.pinned && !b.pinned) return -1;
+  if (!a.pinned && b.pinned) return 1;
+  return 0;
+});
+sortedFolders.forEach(f => {
+  const folderCards = list.filter(c => c.folderId === f.id);
+  if (!folderCards.length) return;
+  html += renderFolderGroup(f, folderCards);
+});
       const ungrouped = list.filter(c => !c.folderId);
       if (ungrouped.length) html += renderFolderGroup({ id: 'ungrouped', name: 'Ungrouped', icon: '🗂', _ungrouped: true }, ungrouped);
       $("cards").innerHTML = html || renderEmpty();
@@ -2160,7 +2165,7 @@ const renderFolderGroup = (folder, cardList) => {
   const itemCount = cardList.reduce((s, c) => s + (c.items ? c.items.length : 0), 0);
   let html = `<div class="folder-group" data-folder="${f.id}">`;
   html += `<div class="folder-header" onclick="toggleFolderGroup('${f.id}')">
-    <span class="fh-icon">${f.icon || '📁'}</span>
+    <span class="fh-icon">${f.icon || '📁'}${f.pinned ? ' 📌' : ''}</span>
     <span class="fh-name">${esc(f.name)}</span>
     <span class="fh-count">${count} card${count !== 1 ? 's' : ''} · ${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
     <span class="fh-arrow ${isCollapsed ? '' : 'rot'}">▶</span>
@@ -3508,6 +3513,79 @@ document.addEventListener("contextmenu", function (e) {
   const cid = parseInt(cfid.substring(2));
   openItemContext(cid, iid);
 });
+// ============ FOLDER CONTEXT MENU ============
+let ctxFolderCur = { id: null };
+const openFolderContext = (folderId) => {
+  const f = folders.find(x => x.id === folderId);
+  if (!f) return;
+  ctxFolderCur = { id: folderId };
+  $("ctxIcon").textContent = f.icon || "📁";
+  $("ctxTitle").textContent = f.name;
+  $("ctxSub").textContent = getFolderCount(folderId) + " cards";
+  const isCollapsed = f.collapsed || false;
+  let h = "";
+  h += `<button class="ctx-item open" onclick="folderContextAction('toggle')"><span class="ci-ic">${isCollapsed ? '📂' : '📁'}</span><span class="ci-txt">${isCollapsed ? 'Expand' : 'Collapse'}</span></button>`;
+  h += `<button class="ctx-item edit" onclick="folderContextAction('edit')"><span class="ci-ic">✎</span><span class="ci-txt">Edit Folder</span></button>`;
+  h += `<button class="ctx-item color" onclick="folderContextAction('color')"><span class="ci-ic">🎨</span><span class="ci-txt">Change Color</span></button>`;
+  h += `<button class="ctx-item pin" onclick="folderContextAction('pin')"><span class="ci-ic">📌</span><span class="ci-txt">${f.pinned ? 'Unpin' : 'Pin to Top'}</span></button>`;
+  h += `<button class="ctx-item delete" onclick="folderContextAction('delete')"><span class="ci-ic">🗑</span><span class="ci-txt">Delete Folder</span></button>`;
+  $("ctxList").innerHTML = h;
+  $("ctxOv").classList.add("on");
+  haptic(20);
+};
+window.folderContextAction = (action) => {
+  const { id } = ctxFolderCur;
+  const f = folders.find(x => x.id === id);
+  $("ctxOv").classList.remove("on");
+  if (!f) return;
+  setTimeout(() => {
+    if (action === "toggle") toggleFolderGroup(id);
+    else if (action === "edit") openFolderModal(id);
+    else if (action === "color") openFolderModal(id);
+    else if (action === "pin") {
+      f.pinned = !f.pinned;
+      save(); render();
+      toast(f.pinned ? "📌 Folder pinned" : "Unpinned");
+    }
+    else if (action === "delete") deleteFolder(id);
+  }, 200);
+};
+
+// Desktop: right-click on folder header → Folder Context Menu
+document.addEventListener("contextmenu", function (e) {
+  const fh = e.target.closest(".folder-header");
+  if (!fh) return;
+  const fg = fh.closest(".folder-group");
+  if (!fg) return;
+  const fid = fg.getAttribute("data-folder");
+  if (!fid || fid === "ungrouped") return;
+  e.preventDefault();
+  if (Date.now() - lastTouchTime < 700) return;
+  openFolderContext(fid);
+});
+
+// Mobile: long-press on folder header → Folder Context Menu
+let folderLongPressTimer = null;
+document.addEventListener("touchstart", function (e) {
+  const fh = e.target.closest(".folder-header");
+  if (!fh) return;
+  const fg = fh.closest(".folder-group");
+  if (!fg) return;
+  const fid = fg.getAttribute("data-folder");
+  if (!fid || fid === "ungrouped") return;
+  clearTimeout(folderLongPressTimer);
+  folderLongPressTimer = setTimeout(() => {
+    folderLongPressTimer = null;
+    haptic(30);
+    openFolderContext(fid);
+  }, 600);
+}, { passive: true });
+document.addEventListener("touchend", function () {
+  if (folderLongPressTimer) { clearTimeout(folderLongPressTimer); folderLongPressTimer = null; }
+}, { passive: true });
+document.addEventListener("touchmove", function () {
+  if (folderLongPressTimer) { clearTimeout(folderLongPressTimer); folderLongPressTimer = null; }
+}, { passive: true });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
     cl(); nCl(); aCl(); eCl(); cfClose(); ndClose(); closeSheet(); setCl(); statsCl(); searchCl(); moveCl(); msCancel(); closeFilterSheet(); tagCl(); clearBinSelection(); ctxClose(); healthCl(); dupCl(); folderCl(); folderMgrCl(); undoCl(); closeQuickActions(); newHhCl(); snoozeCl();
