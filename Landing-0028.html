@@ -2021,7 +2021,9 @@ window.fetchFavicon = () => {
   const url = document.getElementById('ur').value.trim();
   if (!url) return toast('URL required');
   let domain;
-  try { domain = new URL(url.startsWith('http') ? url : 'https://' + url).hostname; } catch (e) { return toast('Invalid URL'); }
+  try {
+    domain = new URL(url.startsWith('http') ? url : 'https://' + url).hostname;
+  } catch (e) { return toast('Invalid URL'); }
   const services = [
     `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
     `https://icons.duckduckgo.com/ip3/${domain}.ico`,
@@ -2031,16 +2033,22 @@ window.fetchFavicon = () => {
   const tryNext = () => {
     if (tried >= services.length) { toast('No icon found'); return; }
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 32; canvas.height = 32;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 32, 32);
-      const dataUrl = canvas.toDataURL('image/png');
-      itemIcon = dataUrl;
+      // Direct URL store karo (canvas skip karo — CORS bypass)
+      itemIcon = services[tried];
       const grid = document.getElementById('linkIconGrid');
-      if (grid) grid.querySelectorAll('button').forEach(b => b.classList.remove('sel'));
+      if (grid) {
+        grid.querySelectorAll('button').forEach(b => b.classList.remove('sel'));
+        // Grid ke upar preview dikhao
+        let preview = document.getElementById('faviconPreview');
+        if (!preview) {
+          preview = document.createElement('div');
+          preview.id = 'faviconPreview';
+          preview.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:var(--glass);border:1px solid var(--glass-bd);border-radius:10px;font-size:11px;font-weight:700;color:var(--ok)';
+          grid.parentElement.insertBefore(preview, grid);
+        }
+        preview.innerHTML = `<img src="${services[tried]}" style="width:20px;height:20px;border-radius:4px"><span>Icon fetched ✓</span>`;
+      }
       toast('🌐 Icon fetched');
     };
     img.onerror = () => { tried++; tryNext(); };
@@ -2052,7 +2060,9 @@ window.fetchFaviconEdit = () => {
   const url = document.getElementById('e2').value.trim();
   if (!url) return toast('URL required');
   let domain;
-  try { domain = new URL(url.startsWith('http') ? url : 'https://' + url).hostname; } catch (e) { return toast('Invalid URL'); }
+  try {
+    domain = new URL(url.startsWith('http') ? url : 'https://' + url).hostname;
+  } catch (e) { return toast('Invalid URL'); }
   const services = [
     `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
     `https://icons.duckduckgo.com/ip3/${domain}.ico`,
@@ -2062,16 +2072,20 @@ window.fetchFaviconEdit = () => {
   const tryNext = () => {
     if (tried >= services.length) { toast('No icon found'); return; }
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 32; canvas.height = 32;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 32, 32);
-      const dataUrl = canvas.toDataURL('image/png');
-      editItemIcon = dataUrl;
+      editItemIcon = services[tried];
       const grid = document.getElementById('editItemIconGrid');
-      if (grid) grid.querySelectorAll('button').forEach(b => b.classList.remove('sel'));
+      if (grid) {
+        grid.querySelectorAll('button').forEach(b => b.classList.remove('sel'));
+        let preview = document.getElementById('faviconPreviewEdit');
+        if (!preview) {
+          preview = document.createElement('div');
+          preview.id = 'faviconPreviewEdit';
+          preview.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:var(--glass);border:1px solid var(--glass-bd);border-radius:10px;font-size:11px;font-weight:700;color:var(--ok)';
+          grid.parentElement.insertBefore(preview, grid);
+        }
+        preview.innerHTML = `<img src="${services[tried]}" style="width:20px;height:20px;border-radius:4px"><span>Icon fetched ✓</span>`;
+      }
       toast('🌐 Icon fetched');
     };
     img.onerror = () => { tried++; tryNext(); };
@@ -2297,7 +2311,8 @@ const getColorHex = c => {
 const renderIcon = icon => {
   if (!icon) return '🔗';
   if (icon.startsWith('<svg')) return icon;
-  if (icon.startsWith('data:image')) return `<img src="${icon}" style="width:20px;height:20px;object-fit:contain">`;
+  if (icon.startsWith('data:image')) return `<img src="${icon}" style="width:20px;height:20px;object-fit:contain;border-radius:4px">`;
+  if (icon.startsWith('http://') || icon.startsWith('https://')) return `<img src="${icon}" style="width:20px;height:20px;object-fit:contain;border-radius:4px" onerror="this.style.display='none';this.parentElement.innerHTML='🔗'">`;
   return icon;
 };
 
