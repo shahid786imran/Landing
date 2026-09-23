@@ -2166,7 +2166,7 @@ const renderFolderGroup = (folder, cardList) => {
   let html = `<div class="folder-group" data-folder="${f.id}">`;
 const colorHex = f.color ? getColorHex(f.color) : 'transparent';
 const colorRgb = f.color ? getColorRgb(f.color) : null;
-const headerStyle = colorRgb ? `background:rgba(${colorRgb},.15);border-left:4px solid ${colorHex}` : '';
+const headerStyle = colorRgb ? `background:rgba(${colorRgb},.35);border-left:4px solid ${colorHex}` : '';
 html += `<div class="folder-header" onclick="toggleFolderGroup('${f.id}')" style="${headerStyle}">
   <span class="fh-icon">${f.icon || '📁'}${f.pinned ? ' 📌' : ''}</span>
     <span class="fh-name">${esc(f.name)}</span>
