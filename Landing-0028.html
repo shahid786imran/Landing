@@ -1870,7 +1870,7 @@ const checkSnoozed = () => {
 setInterval(checkSnoozed, 60000);
 
 // ==================== PLACEHOLDER FUNCTIONS (defined fully in Part 3) ====================
-let render, renderSmartSuggestion, renderSearch, openHealth, openStats, openDupScan, openSettings, openNewHhPicker, applyScheme, setFont, setCompact, setHhScale, setRwScale, resetHhScale, resetRwScale, setHomeMode, setThemeMode, setToastDuration, setToastPos, setFontFamily, setCardStyle, setAnimSpeed, setLayout, setFabIcon, setFabSize, setDblTap, setTripleTap, setLongPress, setSwipeUp, setSwipeDown, setAutoDel, setExpiryNotif, setListView, toggleSwitch, updateSettingUI, healthCl, statsCl, dupCl, setCl, newHhCl, newHhSetOpacity, newHhReset, newHhPreset, showConfirm, cfClose, cfYes, copyCred, doHomeAction, createRipple, fabTap, handleGestureAction, openSheet, closeSheet, sheetAction, tog, toggleAllEdit, toggleArchive, openSearch, searchCl, onSearch, searchGoto, openRecent, openFilterSheet, closeFilterSheet, selectFilterChip, selectFolderChip, openMovePicker, moveCl, doMoveToFolder, msCancel, openCustomTag, tagCl, tagSave, openFolderModal, folderCl, folderSave, openFolderMgr, folderMgrCl, deleteFolder, toggleCollapse, moveCard, moveItem, togglePin, togglePinBottom, toggleFav, toggleHideCard, toggleLockCard, askArchiveCard, askArchiveItem, doArchiveCard, doArchiveItem, restoreArchived, deleteArchived, clearArchive, toggleBinSelect, selectAllBin, clearBinSelection, updateBinBar, binRestoreSelected, binDeleteSelected, msArchive, msDelete, msMove, openItemContext, ctxClose, ctxAction, onRowClick, toggleRowSelect, toggleCardSelect, updateMSBar, exportPDF, exportFile, importJSON, checkExpiryNotifications, editCard, eCl, eSave, pickType, editHeader, addExpiryChips, openAddMenu, aSave, addItem, sv, nSv, cl, nCl, aCl, buildEmojiGrid, pickEmoji, pickNoteColor, pickCardColor, pickTagColor, pickFolderColor, deleteTagGlobal, buildTagPickerFor, __tagToggle, switchIconTab, pickSvgIcon, filterSvgIcons, fetchFavicon, fetchFaviconEdit, editItem;
+let render, renderSmartSuggestion, renderSearch, openHealth, openStats, openDupScan, openSettings, openNewHhPicker, applyScheme, setFont, setCompact, setHhScale, setRwScale, resetHhScale, resetRwScale, setHomeMode, setThemeMode, setToastDuration, setToastPos, setFontFamily, setCardStyle, setAnimSpeed, setLayout, setFabIcon, setFabSize, setDblTap, setTripleTap, setLongPress, setSwipeUp, setSwipeDown, setAutoDel, setExpiryNotif, setListView, toggleSwitch, updateSettingUI, healthCl, statsCl, dupCl, setCl, newHhCl, newHhSetOpacity, newHhReset, newHhPreset, editCard, eCl, eSave, pickType, editHeader, addExpiryChips, openAddMenu, aSave, addItem, sv, nSv, cl, nCl, aCl;
 // These will be assigned in Part 3.
 
 // ==================== INIT (called after Part 3) ====================
@@ -3019,7 +3019,7 @@ editItem = (cid, iid) => {
       <div class="fd"><label>URL</label><input id="e2" value="${esc(it.url)}"></div>
       <button class="fetch-btn" onclick="fetchFaviconEdit()">🌐 Fetch Icon from URL</button>
       <div class="fd"><label>Tags (multiple)</label><div class="tag-picker" id="editTagPicker"></div></div>
-      <div class="fd"><label>Expiry</label><input id="eExp" type="date" value="${it.expiry || ''}"></div>
+      <div class="fd"><label>Expiry</label><input id="eExp" type="date"></div>
       <div class="fd"><label>Icon</label><div class="emoji-grid" id="editItemIconGrid"></div></div>
     `;
   } else {
@@ -3028,7 +3028,7 @@ editItem = (cid, iid) => {
       <div class="fd"><label>Title</label><input id="e1" value="${esc(it.title)}"></div>
       <div class="fd"><label>Detail</label><textarea id="e2" rows="6">${esc(it.content || '')}</textarea></div>
       <div class="fd"><label>Tags (multiple)</label><div class="tag-picker" id="editTagPicker"></div></div>
-      <div class="fd"><label>Expiry</label><input id="eExp" type="date" value="${it.expiry || ''}"></div>
+      <div class="fd"><label>Expiry</label><input id="eExp" type="date"></div>
       <div class="fd"><label>Icon</label><div class="emoji-grid" id="editItemIconGrid"></div></div>
       <div class="fd"><label>Color</label><div class="color-picker" id="editNoteColorPicker">${['', '1', '2', '3'].map(cc => `<div class="color-opt ${cc ? `c${cc}` : 'c0'} ${it.color === cc ? 'on' : ''}" data-c="${cc}" onclick="pickNoteColor('${cc}')"></div>`).join('')}</div></div>
     `;
@@ -3044,7 +3044,6 @@ editItem = (cid, iid) => {
 };
 // eSave is already defined above (reassignable because declared with let in Part 2)
 // But we need to ensure it handles item edits properly. We'll override it again to be safe:
-const originalESave = eSave;
 eSave = () => {
   if (editing.type === "header") {
     const c = cards.find(x => x.id === editing.cid);
