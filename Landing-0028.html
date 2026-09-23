@@ -571,6 +571,7 @@ body.night .switch{border-color:var(--glass-bd)}
 <div class="ov" id="folderOv"><div class="pp"><div class="pph"><span id="folderTitle">New Folder</span><button onclick="folderCl()">✕</button></div><div class="ppb"><div class="fd"><label>Name</label><input id="folderName" placeholder="e.g. Office"></div><div class="fd"><label>Icon</label><div class="emoji-grid" id="folderIconGrid"></div></div><div class="fd"><label>Color</label><div class="color-picker" id="folderColorPicker"><div class="color-opt blue on" data-c="blue" onclick="pickFolderColor('blue')"></div><div class="color-opt green" data-c="green" onclick="pickFolderColor('green')"></div><div class="color-opt pink" data-c="pink" onclick="pickFolderColor('pink')"></div><div class="color-opt orange" data-c="orange" onclick="pickFolderColor('orange')"></div><div class="color-opt purple" data-c="purple" onclick="pickFolderColor('purple')"></div><div class="color-opt cyan" data-c="cyan" onclick="pickFolderColor('cyan')"></div></div></div></div><div class="ppf"><button onclick="folderCl()">Cancel</button><button class="pr" onclick="folderSave()">Save</button></div></div></div>
 
 <div class="ov" id="moveOv"><div class="pp"><div class="pph"><span>Move to Folder</span><button onclick="moveCl()">✕</button></div><div class="ppb"><div class="move-picker" id="movePicker"></div></div></div></div>
+<div class="ov" id="moveItemOv"><div class="pp"><div class="pph"><span>Move Item to Card</span><button onclick="moveItemCl()">✕</button></div><div class="ppb"><div class="move-picker" id="moveItemPicker"></div></div></div></div>
 <div class="ov" id="folderMgrOv"><div class="pp"><div class="pph"><span>📁 Manage Folders</span><button onclick="folderMgrCl()">✕</button></div><div class="ppb" id="folderMgrBody"></div></div></div>
 <div class="ov" id="healthOv"><div class="pp"><div class="pph"><span>🩺 Health Dashboard</span><button onclick="healthCl()">✕</button></div><div class="ppb" id="healthBody"></div></div></div>
 <div class="ov" id="dupOv"><div class="pp"><div class="pph"><span>🧹 Find Duplicates</span><button onclick="dupCl()">✕</button></div><div class="ppb" id="dupBody"></div></div></div>
@@ -1161,7 +1162,7 @@ const updateFabFilter = () => {
 
 // ==================== CORE ACTIONS ====================
 const doHomeAction = () => {
-  cl(); nCl(); aCl(); eCl(); cfClose(); ndClose(); closeSheet(); setCl(); statsCl(); searchCl(); moveCl(); msCancel(); closeFilterSheet(); tagCl(); clearBinSelection(); ctxClose(); healthCl(); dupCl(); folderCl(); folderMgrCl(); undoCl(); closeQuickActions(); newHhCl(); snoozeCl();
+  cl(); nCl(); aCl(); eCl(); cfClose(); ndClose(); closeSheet(); setCl(); statsCl(); searchCl(); moveCl(); moveItemCl(); msCancel(); closeFilterSheet(); tagCl(); clearBinSelection(); ctxClose(); healthCl(); dupCl(); folderCl(); folderMgrCl(); undoCl(); closeQuickActions(); newHhCl(); snoozeCl();
   if (showArchive) showArchive = false;
   editAll = false;
   if (currentFilter !== "all") clearFilter();
@@ -1703,6 +1704,65 @@ const openMovePicker = () => {
   $("moveOv").classList.add("on");
 };
 const moveCl = () => $("moveOv").classList.remove("on");
+// ============ MOVE ITEM TO CARD ============
+let moveItemCur = { cid: null, iid: null };
+const openMoveItemPicker = (cid, iid) => {
+  const c = cards.find(x => x.id === cid);
+  if (!c) return;
+  const it = c.items.find(x => x.id === iid);
+  if (!it) return;
+  if (c.locked || it.locked) { toast("Item is locked"); return; }
+  moveItemCur = { cid, iid };
+  const picker = $("moveItemPicker");
+  const sameTypeCards = cards.filter(x => x.type === c.type && x.id !== cid && !x.locked && x.type !== "header");
+  let h = "";
+  if (!sameTypeCards.length) {
+    h += `<div style="text-align:center;padding:30px 16px;color:var(--mt);font-size:12px">
+      <div style="font-size:40px;margin-bottom:10px">📭</div>
+      <div style="font-weight:700;margin-bottom:6px">No other ${c.type} cards</div>
+      <div>Create a new ${c.type} card first</div>
+    </div>`;
+  } else {
+    sameTypeCards.forEach(tc => {
+      h += `<div class="move-card-item" onclick="doMoveItemToCard('${tc.id}')">
+        <span class="ic">${tc.icon || (c.type === 'link' ? '🔗' : '📝')}</span>
+        <span class="nm">${esc(tc.name)}</span>
+        <span class="cnt">${tc.items.length} item${tc.items.length !== 1 ? 's' : ''}</span>
+      </div>`;
+    });
+  }
+  picker.innerHTML = h;
+  $("moveItemOv").classList.add("on");
+};
+const moveItemCl = () => $("moveItemOv").classList.remove("on");
+$("moveItemOv").onclick = e => e.target.id === "moveItemOv" && moveItemCl();
+window.doMoveItemToCard = (targetCid) => {
+  const { cid, iid } = moveItemCur;
+  const srcCard = cards.find(x => x.id === cid);
+  const tgtCard = cards.find(x => x.id === targetCid);
+  if (!srcCard || !tgtCard) return;
+  const idx = srcCard.items.findIndex(x => x.id === iid);
+  if (idx < 0) return;
+  const it = srcCard.items[idx];
+  if (srcCard.locked || it.locked || tgtCard.locked) { toast("Locked — cannot move"); moveItemCl(); return; }
+  srcCard.items.splice(idx, 1);
+  it.updated = Date.now();
+  tgtCard.items.push(it);
+  srcCard.updated = Date.now();
+  tgtCard.updated = Date.now();
+  moveItemCl();
+  save(); render();
+  toast(`Moved to "${tgtCard.name}"`);
+  pushUndo(`Move "${it.title}" to ${tgtCard.name}`, () => {
+    const ti = tgtCard.items.findIndex(x => x.id === iid);
+    if (ti >= 0) {
+      const [moved] = tgtCard.items.splice(ti, 1);
+      srcCard.items.splice(idx, 0, moved);
+      save(); render();
+    }
+  });
+};
+// ============ END MOVE ITEM ============
 $("moveOv").onclick = e => e.target.id === "moveOv" && moveCl();
 const doMoveToFolder = folderId => {
   moveCl();
@@ -2515,6 +2575,7 @@ const openItemContext = (cid, iid) => {
   h += `<button class="ctx-item open" onclick="ctxAction('open')"><span class="ci-ic">${isLink ? '🔗' : '📝'}</span><span class="ci-txt">Open</span></button>`;
   h += `<button class="ctx-item copy" onclick="ctxAction('copy')"><span class="ci-ic">📋</span><span class="ci-txt">${isLink ? 'Copy Link' : 'Copy Note'}</span></button>`;
   h += `<button class="ctx-item add" onclick="ctxAction('add')"><span class="ci-ic">➕</span><span class="ci-txt">Add New Item</span></button>`;
+  h += `<button class="ctx-item ${isLocked ? 'locked-disabled' : ''}" onclick="${isLocked ? '' : 'ctxAction(\'move\')'}" style="${isLocked ? '' : ''}"><span class="ci-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">↔️</span><span class="ci-txt">Move to Card</span></button>`;
   h += `<button class="ctx-item edit ${isLocked ? 'locked-disabled' : ''}" onclick="${isLocked ? '' : 'ctxAction(\'edit\')'}"><span class="ci-ic">✎</span><span class="ci-txt">Edit Item</span></button>`;
   h += `<button class="ctx-item expiry" onclick="ctxAction('expiry')"><span class="ci-ic">⏰</span><span class="ci-txt">Set Expiry<div class="ci-sub">${it.expiry ? 'Current: ' + it.expiry : 'Auto-archive later'}</div></span></button>`;
   h += `<button class="ctx-item lock ${isLocked ? 'locked-disabled' : ''}" onclick="${isLocked ? '' : 'ctxAction(\'lock\')'}"><span class="ci-ic">🔒</span><span class="ci-txt">${it.locked ? 'Unlock Item' : 'Lock Item'}</span></button>`;
@@ -2540,6 +2601,7 @@ const ctxAction = action => {
       const txt = c.type === "link" ? it.url : (it.content || it.title);
       navigator.clipboard.writeText(txt).then(() => toast("📋 Copied")).catch(() => toast("Failed"));
     } else if (action === "add") addItem(cid);
+        else if (action === "move") openMoveItemPicker(cid, iid);
     else if (action === "edit") editItem(cid, iid);
     else if (action === "expiry") {
       const cur = it.expiry || "";
@@ -3077,6 +3139,7 @@ editItem = (cid, iid) => {
   editItemIcon = it.icon || (c.type === 'link' ? '🔗' : '📝');
   currentNoteColor = it.color || '';
   itemTag = it.tags || [];
+  const moveBtn = `<button type="button" onclick="eCl();setTimeout(()=>openMoveItemPicker(editing.cid,editing.iid),200)" style="width:100%;padding:10px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-weight:700;font-size:12px;border:0;cursor:pointer;font-family:inherit;margin-top:6px">↔️ Move to Card</button>`;
   if (c.type === 'link') {
     $("ett").textContent = "Edit Link";
     $("eBody").innerHTML = `
@@ -3086,6 +3149,7 @@ editItem = (cid, iid) => {
       <div class="fd"><label>Tags (multiple)</label><div class="tag-picker" id="editTagPicker"></div></div>
       <div class="fd"><label>Expiry</label><input id="eExp" type="date"></div>
       <div class="fd"><label>Icon</label><div class="emoji-grid" id="editItemIconGrid"></div></div>
+      ${moveBtn}
     `;
   } else {
     $("ett").textContent = "Edit Note";
@@ -3096,6 +3160,7 @@ editItem = (cid, iid) => {
       <div class="fd"><label>Expiry</label><input id="eExp" type="date"></div>
       <div class="fd"><label>Icon</label><div class="emoji-grid" id="editItemIconGrid"></div></div>
       <div class="fd"><label>Color</label><div class="color-picker" id="editNoteColorPicker">${['', '1', '2', '3'].map(cc => `<div class="color-opt ${cc ? `c${cc}` : 'c0'} ${it.color === cc ? 'on' : ''}" data-c="${cc}" onclick="pickNoteColor('${cc}')"></div>`).join('')}</div></div>
+      ${moveBtn}
     `;
   }
   $("eov").classList.add("on");
@@ -3106,110 +3171,6 @@ editItem = (cid, iid) => {
     const inp = $("eExp");
     if (inp && it.expiry) inp.value = it.expiry;
   }, 50);
-};
-// eSave is already defined above (reassignable because declared with let in Part 2)
-// But we need to ensure it handles item edits properly. We'll override it again to be safe:
-eSave = () => {
-  if (editing.type === "header") {
-    const c = cards.find(x => x.id === editing.cid);
-    if (!c) return;
-    const v1 = $("ecTitle").value.trim(), v2 = $("ecUrl").value.trim();
-    let u = v2;
-    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
-    c.title = v1 || c.title;
-    c.url = u;
-    c.subtitle = $("ecSub").value.trim();
-    c.folderId = $("ecFolder").value || null;
-    c.color = currentCardColor;
-    c.colorOpacity = currentCardColorOpacity;
-    c.icon = editCardIcon;
-    c.updated = Date.now();
-    save(); eCl(); render(); toast("✓ Updated");
-    return;
-  }
-  if (editing.iid) {
-    const c = cards.find(x => x.id === editing.cid);
-    if (!c) return;
-    const it = c.items.find(x => x.id === editing.iid);
-    if (!it) return;
-    const v1 = $("e1").value.trim(), v2 = $("e2").value.trim();
-    const exp = $("eExp") ? $("eExp").value || null : null;
-    if (editing.type === 'link') {
-      let u = v2;
-      if (!/^https?:\/\//i.test(u)) u = "https://" + u;
-      it.title = v1 || u;
-      it.url = u;
-      it.icon = editItemIcon;
-      it.tags = itemTag || [];
-      it.expiry = exp;
-    } else {
-      it.title = v1 || 'Untitled';
-      it.content = v2;
-      it.icon = editItemIcon;
-      it.color = currentNoteColor;
-      it.tags = itemTag || [];
-      it.expiry = exp;
-    }
-    it.updated = Date.now();
-    c.updated = Date.now();
-    save(); eCl(); render(); checkExpiredItems(); toast("✓ Updated");
-    return;
-  }
-  // fallback to card edit
-  if (editing.cid) {
-    const c = cards.find(x => x.id === editing.cid);
-    if (!c) return;
-    const v1 = $("ecTitle").value.trim();
-    if (!v1) return toast("Title required");
-    c.name = v1;
-    c.subtitle = $("ecSub").value.trim();
-    c.folderId = $("ecFolder").value || null;
-    c.color = currentCardColor;
-    c.colorOpacity = currentCardColorOpacity;
-    c.icon = editCardIcon;
-    c.updated = Date.now();
-    save(); eCl(); render(); toast("✓ Updated");
-  }
-};
-// Also override editCard to use the new card edit modal
-editCard = id => {
-  const c = cards.find(x => x.id === id);
-  if (!c) return;
-  if (c.locked) { toast("Card is locked"); return; }
-  editing = { cid: id, type: c.type };
-  editCardIcon = c.icon || "📒";
-  currentCardColor = c.color || "";
-  currentCardColorOpacity = c.colorOpacity || 70;
-  $("ett").textContent = "Edit Card";
-  $("eBody").innerHTML = `
-    <div class="fd"><label>Title / Name</label><input id="ecTitle" value="${esc(c.type === 'header' ? c.title : c.name)}"></div>
-    ${c.type === 'header' ? `<div class="fd"><label>URL</label><input id="ecUrl" value="${esc(c.url)}"></div>` : ''}
-    <div class="fd"><label>Subtitle</label><input id="ecSub" value="${esc(c.subtitle || '')}"></div>
-    <div class="fd"><label>Folder</label><select id="ecFolder"><option value="">No Folder</option>${folders.map(f => `<option value="${f.id}" ${c.folderId === f.id ? 'selected' : ''}>${f.icon || '📁'} ${esc(f.name)}</option>`).join('')}</select></div>
-    <div class="fd"><label>Tags (multiple)</label><div class="tag-picker" id="editTagPicker"></div></div>
-    <div class="fd"><label>Color</label><div class="color-picker" id="editCardColorPicker">${['', 'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'cyan'].map(cc => `<div class="color-opt ${cc || 'c0'} ${c.color === cc ? 'on' : ''}" data-c="${cc}" onclick="pickCardColor('${cc}')"></div>`).join('')}</div></div>
-    <div class="fd"><label>Opacity</label><input type="range" min="5" max="100" value="${c.colorOpacity || 70}" class="slider" id="ecOpacity" oninput="document.getElementById('ecOpacityVal').textContent=this.value+'%';currentCardColorOpacity=parseInt(this.value)"><span id="ecOpacityVal" style="font-size:11px;color:var(--p);font-weight:800">${c.colorOpacity || 70}%</span></div>
-    <div class="fd"><label>Icon</label><div class="emoji-grid" id="editCardIconGrid"></div></div>
-  `;
-  $("eov").classList.add("on");
-  setTimeout(() => {
-    buildEmojiGrid("editCardIconGrid", editCardIcon, e => editCardIcon = e);
-    buildTagPickerFor("editTagPicker", c.tags || [], v => c.tags = v);
-  }, 50);
-};
-
-// ==================== ADD ITEM / CARD ====================
-pickType = t => {
-  currentType = t;
-  document.querySelectorAll(".type-card").forEach(el => el.classList.toggle("active", el.dataset.t === t));
-  $("fTitle").style.display = "block";
-  $("fUrl").style.display = t === "header" ? "block" : "none";
-  $("fSubtitle").style.display = "block";
-  $("fFolder").style.display = "block";
-  $("fIcon").style.display = "block";
-  const map = { header: "📒", link: "🔗", note: "📝" };
-  newIcon = map[t];
-  buildEmojiGrid("emojiGrid", newIcon, e => newIcon = e);
 };
 editHeader = id => {
   const c = cards.find(x => x.id === id);
@@ -3638,7 +3599,7 @@ document.addEventListener("touchmove", function () {
 }, { passive: true });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
-    cl(); nCl(); aCl(); eCl(); cfClose(); ndClose(); closeSheet(); setCl(); statsCl(); searchCl(); moveCl(); msCancel(); closeFilterSheet(); tagCl(); clearBinSelection(); ctxClose(); healthCl(); dupCl(); folderCl(); folderMgrCl(); undoCl(); closeQuickActions(); newHhCl(); snoozeCl();
+    cl(); nCl(); aCl(); eCl(); cfClose(); ndClose(); closeSheet(); setCl(); statsCl(); searchCl(); moveCl(); moveItemCl(); msCancel(); closeFilterSheet(); tagCl(); clearBinSelection(); ctxClose(); healthCl(); dupCl(); folderCl(); folderMgrCl(); undoCl(); closeQuickActions(); newHhCl(); snoozeCl();
     return;
   }
   if ((e.ctrlKey || e.metaKey) && e.key === "k") { e.preventDefault(); openSearch(); return; }
