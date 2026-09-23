@@ -894,9 +894,175 @@ ${c.type==='header'?`<div class="fd"><label>URL</label><input id="ecUrl" value="
 `;$("eov").classList.add("on");setTimeout(()=>{buildEmojiGrid("editCardIconGrid",editCardIcon,e=>editCardIcon=e);buildTagPickerFor("editTagPicker",c.tags||[],v=>c.tags=v)},50)};
 const eCl=()=>$("eov").classList.remove("on");
 $("eov").onclick=e=>e.target.id==="eov"&&eCl();
-const eSave=()=>{if(editing.type==="header"){const c=cards.find(x=>x.id===editing.cid);if(!c)return;const v1=$("ecTitle").value.trim(),v2=$("ecUrl").value.trim();let u=v2;if(!/^https?:\/\//i.test(u))u="https://"+u;c.title=v1||c.title;c.url=u;c.subtitle=$("ecSub").value.trim();c.folderId=$("ecFolder").value||null;c.color=currentCardColor;c.colorOpacity=currentCardColorOpacity;c.icon=editCardIcon;c.updated=Date.now();save();eCl();render();toast("✓ Updated");return}const c=cards.find(x=>x.id===editing.cid);if(!c)return;const v1=$("ecTitle").value.trim();if(!v1)return toast("Title required");c.name=v1;c.subtitle=$("ecSub").value.trim();c.folderId=$("ecFolder").value||null;c.color=currentCardColor;c.colorOpacity=currentCardColorOpacity;c.icon=editCardIcon;c.updated=Date.now();save();eCl();render();toast("✓ Updated")};
+let eSave=()=>{if(editing.type==="header"){const c=cards.find(x=>x.id===editing.cid);if(!c)return;const v1=$("ecTitle").value.trim(),v2=$("ecUrl").value.trim();let u=v2;if(!/^https?:\/\//i.test(u))u="https://"+u;c.title=v1||c.title;c.url=u;c.subtitle=$("ecSub").value.trim();c.folderId=$("ecFolder").value||null;c.color=currentCardColor;c.colorOpacity=currentCardColorOpacity;c.icon=editCardIcon;c.updated=Date.now();save();eCl();render();toast("✓ Updated");return}const c=cards.find(x=>x.id===editing.cid);if(!c)return;const v1=$("ecTitle").value.trim();if(!v1)return toast("Title required");c.name=v1;c.subtitle=$("ecSub").value.trim();c.folderId=$("ecFolder").value||null;c.color=currentCardColor;c.colorOpacity=currentCardColorOpacity;c.icon=editCardIcon;c.updated=Date.now();save();eCl();render();toast("✓ Updated")};
 const setCardOpacity=v=>{currentCardColorOpacity=parseInt(v);const el=$("cardOpacityVal");if(el)el.textContent=v+"%";const el2=$("ecOpacityVal");if(el2)el2.textContent=v+"%"};
-// ---------- SVG ICON SYSTEM ----------
+// === MISSING FUNCTIONS PATCH ===
+let itemIcon = "📝";
+let itemTag = [];
+let currentCardOpacity = 70;
+let currentTags = [];
+window._cid = null;
+
+cl = () => $("ov").classList.remove("on");
+nCl = () => $("nov").classList.remove("on");
+aCl = () => { $("aov").classList.remove("on"); $("fab").classList.remove("hidden-by-modal"); };
+
+pickType = (t) => {
+  currentType = t;
+  document.querySelectorAll(".type-card").forEach(el => el.classList.toggle("active", el.dataset.t === t));
+  $("fTitle").style.display = "block";
+  $("fUrl").style.display = t === "header" ? "block" : "none";
+  $("fSubtitle").style.display = "block";
+  $("fFolder").style.display = "block";
+  $("fIcon").style.display = "block";
+  const map = { header: "📒", link: "🔗", note: "📝" };
+  newIcon = map[t];
+  buildEmojiGrid("emojiGrid", newIcon, e => newIcon = e);
+};
+
+editHeader = (id) => {
+  const c = cards.find(x => x.id === id);
+  if (!c) return;
+  editing = { cid: id, type: "header" };
+  editCardIcon = c.icon || "📒";
+  $("ett").textContent = "Edit Header";
+  $("eBody").innerHTML = `<div class="fd"><label>Title</label><input id="e1" value="${esc(c.title)}"></div><div class="fd"><label>URL</label><input id="e2" value="${esc(c.url)}"></div><div class="fd"><label>Icon</label><div class="emoji-grid" id="hEmoji"></div></div>`;
+  $("eov").classList.add("on");
+  setTimeout(() => buildEmojiGrid("hEmoji", c.icon || "📒", e => editCardIcon = e), 50);
+};
+
+addExpiryChips = (inputId) => {
+  const inp = $(inputId);
+  if (!inp) return;
+  const wrap = inp.parentElement.querySelector(".expiry-chips-row");
+  if (wrap) wrap.remove();
+  const row = document.createElement("div");
+  row.className = "expiry-chips-row";
+  const opts = [
+    { label: "Never", days: -1 },
+    { label: "Today", days: 0 },
+    { label: "Tomorrow", days: 1 },
+    { label: "3 days", days: 3 },
+    { label: "1 month", days: 30 },
+    { label: "3 months", days: 90 },
+    { label: "6 months", days: 180 },
+    { label: "1 year", days: 365 }
+  ];
+  opts.forEach(o => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "expiry-quick-btn";
+    b.textContent = o.label;
+    b.onclick = function(e) {
+      e.preventDefault();
+      if (o.days === -1) { inp.value = ""; return; }
+      const d = new Date();
+      d.setDate(d.getDate() + o.days);
+      inp.value = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    };
+    row.appendChild(b);
+  });
+  inp.parentElement.insertBefore(row, inp);
+};
+
+openAddMenu = () => {
+  $("aTitle").value = "";
+  $("aUrl").value = "";
+  $("aSubtitle").value = "";
+  currentTags = [];
+  currentCardColor = "";
+  currentCardOpacity = 70;
+  const sel = $("aFolder");
+  sel.innerHTML = '<option value="">No Folder</option>' + folders.map(f => `<option value="${f.id}">${f.icon || "📁"} ${esc(f.name)}</option>`).join("");
+  if (currentFolder !== "all" && !currentFolder.startsWith("smart-")) sel.value = currentFolder;
+  pickType("header");
+  buildTagPickerFor("tagPicker", currentTags, v => currentTags = v);
+  document.querySelectorAll("#cardColorPicker .color-opt").forEach(o => o.classList.toggle("on", o.dataset.c === ""));
+  $("fab").classList.add("hidden-by-modal");
+  $("aov").classList.add("on");
+};
+
+aSave = () => {
+  const t = $("aTitle").value.trim();
+  if (!t) return toast("Title required");
+  const pin = settings.autopin;
+  const sub = $("aSubtitle").value.trim();
+  const folderId = $("aFolder").value || null;
+  const tags = currentTags || [];
+  const maxP = pin ? (Math.max(0, ...cards.filter(x => x.pinned).map(x => x.pinPriority || 0)) + 1) : 0;
+  if (currentType === "header") {
+    let u = $("aUrl").value.trim();
+    if (!u) return toast("URL required");
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    cards.push({ id: Date.now(), type: "header", title: t, url: u, icon: newIcon, subtitle: sub, tags, folderId, color: currentCardColor, colorOpacity: currentCardOpacity, pinned: pin, pinBottom: false, pinPriority: maxP, fav: false, hidden: false, snoozeUntil: 0, locked: false, updated: Date.now() });
+  } else {
+    cards.push({ id: Date.now(), type: currentType, name: t, icon: newIcon, subtitle: sub, tags, folderId, color: currentCardColor, colorOpacity: currentCardOpacity, items: [], collapsed: false, pinned: pin, pinBottom: false, pinPriority: maxP, fav: false, hidden: false, snoozeUntil: 0, locked: false, updated: Date.now() });
+  }
+  save(); aCl(); render(); toast("✓ Created");
+};
+
+addItem = (cid) => {
+  const c = cards.find(x => x.id === cid);
+  editing = {};
+  window._cid = cid;
+  currentNoteColor = "";
+  itemTag = [];
+  if (c.type === "link") {
+    $("tt").textContent = "Add Link";
+    $("ti").value = "";
+    $("ur").value = "";
+    $("expiryInput").value = "";
+    itemIcon = "🔗";
+    buildTagPickerFor("linkTagPicker", [], v => itemTag = v);
+    addExpiryChips("expiryInput");
+    $("ov").classList.add("on");
+    setTimeout(() => buildEmojiGrid("linkIconGrid", itemIcon, e => itemIcon = e), 50);
+  } else {
+    $("ntt").textContent = "Add Note";
+    $("nti").value = "";
+    $("nco").value = "";
+    $("noteExpiryInput").value = "";
+    itemIcon = "📝";
+    pickNoteColor("");
+    buildTagPickerFor("noteTagPicker", [], v => itemTag = v);
+    addExpiryChips("noteExpiryInput");
+    $("nov").classList.add("on");
+    setTimeout(() => buildEmojiGrid("noteIconGrid", itemIcon, e => itemIcon = e), 50);
+  }
+};
+
+sv = () => {
+  const t = $("ti").value.trim();
+  let u = $("ur").value.trim();
+  if (!u) return toast("URL required");
+  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+  const c = cards.find(x => x.id === window._cid);
+  const g = $("linkIconGrid");
+  const ic = g && g._selected ? g._selected : "🔗";
+  const exp = $("expiryInput").value || null;
+  const dup = cards.find(x => x.items.some(it => it.url === u));
+  const doAdd = () => {
+    c.items.push({ id: Date.now(), title: t || u, url: u, icon: ic, tags: itemTag || [], expiry: exp, added: Date.now(), updated: Date.now(), locked: false, hidden: false, snoozeUntil: 0 });
+    c.updated = Date.now();
+    save(); cl(); render(); checkExpiredItems(); toast("✓ Added");
+  };
+  if (dup && dup.id !== c.id) showConfirm("Duplicate", "URL exists. Add anyway?", "⚠️", doAdd);
+  else doAdd();
+};
+
+nSv = () => {
+  const t = $("nti").value.trim(), ct = $("nco").value.trim();
+  if (!t && !ct) return toast("Empty");
+  const c = cards.find(x => x.id === window._cid);
+  const g = $("noteIconGrid");
+  const ic = g && g._selected ? g._selected : "📝";
+  const exp = $("noteExpiryInput").value || null;
+  c.items.push({ id: Date.now(), title: t || "Untitled", content: ct, icon: ic, color: currentNoteColor, tags: itemTag || [], expiry: exp, added: Date.now(), updated: Date.now(), locked: false, hidden: false, snoozeUntil: 0 });
+  c.updated = Date.now();
+  save(); nCl(); render(); checkExpiredItems(); toast("✓ Added");
+};
+// === END MISSING FUNCTIONS PATCH ===
+  // ---------- SVG ICON SYSTEM ----------
 const SVG_ICONS = {
   feather: [
     {name:"link",svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'},
