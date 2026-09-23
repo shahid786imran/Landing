@@ -639,6 +639,7 @@ body.night .switch{border-color:var(--glass-bd)}
 <div class="setting-row"><div class="sl"><div class="lb">Show timestamps</div></div><div class="switch" id="swTimestamps" onclick="toggleSwitch('showTimestamps')"></div></div>
 <div class="setting-row"><div class="sl"><div class="lb">Show card stats</div></div><div class="switch" id="swCardStats" onclick="toggleSwitch('showCardStats')"></div></div>
 <div class="setting-row"><div class="sl"><div class="lb">Show health dot</div></div><div class="switch" id="swHealthDot" onclick="toggleSwitch('showHealthDot')"></div></div>
+<div class="setting-row"><div class="sl"><div class="lb">Group by folder</div><div class="sb">Folder system home par</div></div><div class="switch on" id="swShowFolders" onclick="toggleSwitch('showFolders')"></div></div>
 <div class="setting-row"><div class="sl"><div class="lb">Compact header</div></div><div class="switch" id="swCompactHeader" onclick="toggleSwitch('compactHeader')"></div></div>
 <div class="setting-row flexcol"><div class="sl"><div class="lb">List view</div></div><div class="seg" id="listViewSeg" style="width:100%"><button data-v="expanded" onclick="setListView('expanded')">Expanded</button><button data-v="compact" onclick="setListView('compact')">Compact</button></div></div>
 <div class="setting-row"><div class="sl"><div class="lb">Smart suggestions</div></div><div class="switch on" id="swSmartSuggest" onclick="toggleSwitch('smartSuggest')"></div></div>
@@ -790,7 +791,8 @@ let settings = {
   autoDel: localStorage.getItem("nm_autoDel") || "0",
   expiryNotif: localStorage.getItem("nm_expiryNotif") !== "false",
   expiryNotifDays: localStorage.getItem("nm_expiryNotifDays") || "1",
-  listView: localStorage.getItem("nm_listView") || "expanded"
+  listView: localStorage.getItem("nm_listView") || "expanded",
+  showFolders:localStorage.getItem("nm_showFolders")!=="false",
 };
 const toastTimes = { short: 1000, normal: 1500, long: 3000 };
 
@@ -2091,7 +2093,7 @@ render = () => {
       if (!a.pinBottom && b.pinBottom) return -1;
       return 0;
     });
-    const groupByFolder = (currentFolder === "all" && currentFilter === "all");
+    const groupByFolder = (currentFolder === "all" && currentFilter === "all" && settings.showFolders);
     if (groupByFolder) {
       let html = "";
       folders.forEach(f => {
@@ -2890,6 +2892,7 @@ updateSettingUI = () => {
   sw('swTimestamps', settings.showTimestamps);
   sw('swCardStats', settings.showCardStats);
   sw('swHealthDot', settings.showHealthDot);
+  sw('swShowFolders', settings.showFolders);
   sw('swCompactHeader', settings.compactHeader);
   sw('swSmartSuggest', settings.smartSuggest);
   sw('swExpiryNotif', settings.expiryNotif);
