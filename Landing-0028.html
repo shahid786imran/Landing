@@ -496,6 +496,8 @@ body.night .switch{border-color:var(--glass-bd)}
 <button class="sheet-item edit" onclick="sheetAction('edit')"><span class="si-ic">✎</span><span class="si-txt">Edit All<div class="si-sub">Toggle edit mode</div></span><span class="si-arrow">›</span></button>
 <button class="sheet-item theme" onclick="sheetAction('theme')"><span class="si-ic">🌙</span><span class="si-txt">Theme<div class="si-sub">Light / Dark</div></span><span class="si-arrow">›</span></button>
 <button class="sheet-item archive" onclick="sheetAction('archive')"><span class="si-ic">🗄</span><span class="si-txt">Recycle Bin<div class="si-sub">View deleted items</div></span><span class="si-arrow">›</span></button>
+<button class="sheet-item" onclick="sheetAction('expandall')"><span class="si-ic" style="background:linear-gradient(135deg,#10b981,#059669)">📖</span><span class="si-txt">Expand All<div class="si-sub">Open all cards</div></span><span class="si-arrow">›</span></button>
+<button class="sheet-item" onclick="sheetAction('collapseall')"><span class="si-ic" style="background:linear-gradient(135deg,#64748b,#475569)">📕</span><span class="si-txt">Collapse All<div class="si-sub">Close all cards</div></span><span class="si-arrow">›</span></button>
 <button class="sheet-item search" onclick="sheetAction('search')"><span class="si-ic">🔍</span><span class="si-txt">Search<div class="si-sub">Find anything</div></span><span class="si-arrow">›</span></button>
 <button class="sheet-item folders" onclick="sheetAction('folders')"><span class="si-ic">📁</span><span class="si-txt">Manage Folders<div class="si-sub">Add, edit, or remove</div></span><span class="si-arrow">›</span></button>
 <button class="sheet-item health" onclick="sheetAction('health')"><span class="si-ic">🩺</span><span class="si-txt">Health Dashboard<div class="si-sub">Card status & cleanup</div></span><span class="si-arrow">›</span></button>
@@ -1241,6 +1243,8 @@ const sheetAction = a => {
     else if (a === "health") openHealth();
     else if (a === "dups") openDupScan();
     else if (a === "folders") openFolderMgr();
+    else if (a === "expandall") { cards.forEach(c => { if (c.type !== "header") c.collapsed = false; }); save(); render(); toast("📖 All expanded"); }
+    else if (a === "collapseall") { cards.forEach(c => { if (c.type !== "header") c.collapsed = true; }); save(); render(); toast("📕 All collapsed"); }
   }, 200);
 };
 const tog = () => { settings.themeMode = settings.themeMode === "dark" ? "light" : "dark"; applyAllSettings(); save(); toast(document.body.classList.contains("night") ? "🌙 Dark" : "☀️ Light"); };
