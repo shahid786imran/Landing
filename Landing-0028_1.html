@@ -309,7 +309,7 @@ body.night .pp{background:linear-gradient(180deg,rgba(30,41,59,.95),rgba(49,46,1
 .note-detail a{pointer-events:auto!important;cursor:pointer}
 .note-detail .nd-title{font-size:19px;font-weight:800;margin-bottom:12px;line-height:1.3}
 .note-detail .nd-body{font-size:15px;line-height:1.7;white-space:pre-wrap;word-wrap:break-word}
-.note-detail .nd-body a{color:var(--p);text-decoration:underline;font-weight:600;word-break:break-all;cursor:pointer;pointer-events:auto}
+.note-detail .nd-body a{color:var(--p);text-decoration:underline;font-weight:600;word-break:break-all;cursor:pointer;pointer-events:auto!important;user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:default!important;touch-action:manipulation}
 .note-detail .nd-body h1{font-size:22px;font-weight:800;margin:16px 0 8px}
 .note-detail .nd-body h2{font-size:18px;font-weight:800;margin:14px 0 6px}
 .note-detail .nd-body h3{font-size:16px;font-weight:800;margin:12px 0 4px}
@@ -672,8 +672,7 @@ body.night .switch{border-color:var(--glass-bd)}
 // ==================== UTILITIES ====================
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const autoLink = t => {
-  const re = /\b((?:https?:\/\/|www\.)[^\s<]+|[a-z0-9-]+(?:\.[a-z0-9-]+)+\.(?:com|org|net|io|co|dev|app|me|edu|gov|info|xyz|online|site)(?:\/[^\s<]*)?)/gi;
+const autoLink=t=>{const re=/\b((?:https?:\/\/|www\.)[^\s<]+|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|co|dev|app|me|edu|gov|info|xyz|online|site)(?:\/[^\s<]*)?)/gi;return esc(t).replace(re,m=>`<a href="${/^https?:\/\//i.test(m)?m:"https://"+m}" target="_blank" rel="noopener">${m}</a>`)};
   return esc(t).replace(re, m => `<a href="${/^https?:\/\//i.test(m) ? m : "https://" + m}" target="_blank" rel="noopener">${m}</a>`);
 };
 const haptic = (ms = 15) => { if (settings.vibrate && navigator.vibrate) navigator.vibrate(ms); };
@@ -3368,6 +3367,16 @@ const openNoteDetail = (cid, iid) => {
   $("ndEditActions").style.display = "none";
   $("ndOv").classList.add("on");
 };
+// Note detail me link tap handler (mobile + desktop)
+document.addEventListener("click", function(e) {
+  const a = e.target.closest(".note-detail a");
+  if (!a) return;
+  const href = a.getAttribute("href");
+  if (!href) return;
+  e.preventDefault();
+  e.stopPropagation();
+  window.open(href, "_blank", "noopener");
+}, true);
 const ndClose = () => { $("ndOv").classList.remove("on"); clearInterval(draftTimer); };
 $("ndOv").onclick = e => e.target.id === "ndOv" && ndClose();
 const ndEnterEdit = () => {
