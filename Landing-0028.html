@@ -453,7 +453,25 @@ body.night .switch{border-color:var(--glass-bd)}
 .folder-header .fh-count{font-size:10px;color:var(--mt);font-weight:700;flex:none}
 .folder-header .fh-arrow{font-size:10px;color:var(--mt);flex:none;transition:transform .3s var(--e)}
 .folder-header .fh-arrow.rot{transform:rotate(90deg)}
-.folder-body{position:relative;padding-left:0;overflow:hidden;transition:max-height .4s var(--e),opacity .3s var(--e)}
+.folder-body {
+  position: relative;
+  margin-left: 8px;
+  margin-right: 8px;
+  border-left: 2px solid var(--pipe-color);
+  border-bottom: 2px solid var(--pipe-color);
+  border-right: 2px solid var(--pipe-color);
+  border-radius: 0 0 10px 10px;
+  padding: 8px 10px 8px 10px;
+  overflow: hidden;
+  transition: max-height .4s var(--e), opacity .3s var(--e);
+}
+.folder-body.collapsed {
+  max-height: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+  border-bottom: none;
+  border-right: none;
+}
 .folder-body.collapsed{max-height:0!important;opacity:0;pointer-events:none}
 .folder-pipe{position:absolute;left:15px;top:0;bottom:0;width:12px;background:linear-gradient(180deg,var(--p),var(--p2));border-radius:2px;opacity:.20}
 .snooze-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
@@ -2128,7 +2146,6 @@ const renderFolderGroup = (folder, cardList) => {
     <span class="fh-arrow ${isCollapsed ? '' : 'rot'}">▶</span>
   </div>`;
   html += `<div class="folder-body ${isCollapsed ? 'collapsed' : ''}" id="fb-${f.id}">`;
-  html += `<div class="folder-pipe"></div>`;
   html += cardList.map((c, idx) => renderCard(c, idx, cardList)).join('');
   html += `</div></div>`;
   return html;
