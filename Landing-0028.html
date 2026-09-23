@@ -6,7 +6,7 @@
 <title>Links Manager</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--p:#6366f1;--p2:#8b5cf6;--ac:#ec4899;--dg:#ef4444;--ok:#10b981;--wn:#f59e0b;--s:#fff;--bd:rgba(99,102,241,.15);--tx:#1e1b4b;--mt:#64748b;--r:18px;--e:cubic-bezier(.22,1,.36,1);--fs:15px;--pad:1;--rowpad:1;--glass:rgba(255,255,255,.7);--glass-bd:rgba(255,255,255,.9);--row-tint:rgba(99,102,241,.04);--card-bg:rgba(255,255,255,.7);--card-bd:rgba(255,255,255,.9);--card-blur:blur(20px);--card-shadow:0 16px 40px -14px rgba(0,0,0,.2),0 6px 20px -8px rgba(99,102,241,.25);--anim:.3s;--fab-size:62px;--hh-scale:1;--rw-scale:1;--hh-custom-bg:transparent;--hh-custom-bd:var(--bd);--pipe-color:rgba(99,102,241,.7)}
+:root{--p:#6366f1;--p2:#8b5cf6;--ac:#ec4899;--dg:#ef4444;--ok:#10b981;--wn:#f59e0b;--s:#fff;--bd:rgba(99,102,241,.15);--tx:#1e1b4b;--mt:#64748b;--r:8px;--e:cubic-bezier(.22,1,.36,1);--fs:15px;--pad:1;--rowpad:1;--glass:rgba(255,255,255,.7);--glass-bd:rgba(255,255,255,.9);--row-tint:rgba(99,102,241,.04);--card-bg:rgba(255,255,255,.7);--card-bd:rgba(255,255,255,.9);--card-blur:blur(20px);--card-shadow:0 16px 40px -14px rgba(0,0,0,.2),0 6px 20px -8px rgba(99,102,241,.25);--anim:.3s;--fab-size:62px;--hh-scale:1;--rw-scale:1;--hh-custom-bg:transparent;--hh-custom-bd:var(--bd);--pipe-color:rgba(99,102,241,.7)}
 body.night{--s:#1e293b;--bd:rgba(255,255,255,.1);--tx:#f1f5f9;--mt:#94a3b8;--glass:rgba(30,41,59,.5);--glass-bd:rgba(255,255,255,.1);--row-tint:rgba(255,255,255,.03);--card-bg:rgba(30,41,59,.9);--card-bd:rgba(255,255,255,.1);--card-shadow:0 16px 40px -14px rgba(0,0,0,.4),0 6px 20px -8px rgba(99,102,241,.2);--pipe-color:rgba(255,255,255,.12)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 #loadingScreen{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#6366f1,#8b5cf6 60%,#ec4899);transition:opacity .6s ease,visibility .6s ease;overflow:hidden;color:#fff;font-family:'Plus Jakarta Sans',sans-serif}
@@ -447,7 +447,7 @@ body.night .switch{border-color:var(--glass-bd)}
 .expiry-chips-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .expiry-quick-btn{padding:6px 12px;border-radius:99px;font-size:11.5px;font-weight:700;background:var(--glass);border:1.5px solid var(--glass-bd);color:var(--tx);cursor:pointer;font-family:inherit}
 .folder-group{margin-bottom:calc(14px * var(--pad))}
-.folder-header{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--card-bg);border:1px solid var(--card-bd);border-radius:12px;cursor:pointer;user-select:none;backdrop-filter:var(--card-blur);-webkit-backdrop-filter:var(--card-blur);transition:.25s var(--e);position:relative;z-index:2}
+.folder-header{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--card-bg);border:1px solid var(--card-bd);border-radius:6px;cursor:pointer;user-select:none;backdrop-filter:var(--card-blur);-webkit-backdrop-filter:var(--card-blur);transition:.25s var(--e);position:relative;z-index:2}
 .folder-header .fh-icon{font-size:18px;flex:none}
 .folder-header .fh-name{flex:1;font-size:13px;font-weight:800;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .folder-header .fh-count{font-size:10px;color:var(--mt);font-weight:700;flex:none}
@@ -455,12 +455,12 @@ body.night .switch{border-color:var(--glass-bd)}
 .folder-header .fh-arrow.rot{transform:rotate(90deg)}
 .folder-body {
   position: relative;
-  margin: 0 12px; 
+  margin: 0;
   padding: 8px 0 0 0;
   border-left: 3px solid var(--pipe-color);
   border-bottom: 3px solid var(--pipe-color);
   border-right: 3px solid var(--pipe-color);
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 6px 6px;
   overflow: hidden;
   transition: max-height .4s var(--e), opacity .3s var(--e);
 }
