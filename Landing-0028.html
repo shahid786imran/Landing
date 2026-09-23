@@ -919,10 +919,18 @@ const getSettings = () => ({
 const restoreSettings = s => {
   if (!s) return;
   Object.keys(settings).forEach(k => { if (s[k] !== undefined) settings[k] = s[k]; });
-  if (s.scheme) applyScheme(s.scheme, 1);
-  if (s.fontSize) setFont(s.fontSize, 1);
-  if (s.compact) setCompact(s.compact, 1);
-  applyAllSettings();
+  try {
+    if (s.scheme && typeof applyScheme === 'function') applyScheme(s.scheme, 1);
+  } catch(e) { console.warn('applyScheme not ready yet'); }
+  try {
+    if (s.fontSize && typeof setFont === 'function') setFont(s.fontSize, 1);
+  } catch(e) {}
+  try {
+    if (s.compact && typeof setCompact === 'function') setCompact(s.compact, 1);
+  } catch(e) {}
+  try {
+    if (typeof applyAllSettings === 'function') applyAllSettings();
+  } catch(e) { console.warn('applyAllSettings err', e); }
 };
 
 // ==================== DATA LOAD/SAVE ====================
@@ -1877,6 +1885,9 @@ let render, renderSmartSuggestion, renderSearch, openHealth, openStats, openDupS
 // load(); render(); renderSmartSuggestion(); updateFabFilter(); updateOnlineStatus();
 // console.log("Ready. Cards:", cards.length);
 </script>
+if (typeof applyScheme === 'undefined') var applyScheme = function(){};
+if (typeof setFont === 'undefined') var setFont = function(){};
+if (typeof setCompact === 'undefined') var setCompact = function(){};
 // ==================== SVG ICON SYSTEM ====================
 const SVG_ICONS = {
   feather: [
