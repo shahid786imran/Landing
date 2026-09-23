@@ -2164,8 +2164,9 @@ const renderFolderGroup = (folder, cardList) => {
   const count = cardList.length;
   const itemCount = cardList.reduce((s, c) => s + (c.items ? c.items.length : 0), 0);
   let html = `<div class="folder-group" data-folder="${f.id}">`;
-  html += `<div class="folder-header" onclick="toggleFolderGroup('${f.id}')">
-    <span class="fh-icon">${f.icon || '📁'}${f.pinned ? ' 📌' : ''}</span>
+const colorHex = f.color ? getColorHex(f.color) : 'transparent';
+html += `<div class="folder-header" onclick="toggleFolderGroup('${f.id}')" style="${f.color ? 'border-left:4px solid ' + colorHex : ''}">
+  <span class="fh-icon">${f.icon || '📁'}${f.pinned ? ' 📌' : ''}</span>
     <span class="fh-name">${esc(f.name)}</span>
     <span class="fh-count">${count} card${count !== 1 ? 's' : ''} · ${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
     <span class="fh-arrow ${isCollapsed ? '' : 'rot'}">▶</span>
