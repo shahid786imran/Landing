@@ -1197,7 +1197,9 @@ const fabTap = e => {
   }
 };
 const handleGestureAction = a => {
-  if (a === "settings") openSettings();
+  if (a === "filter") openFilterSheet();
+  else if (a === "context") openSheet();
+  else if (a === "settings") openSettings();
   else if (a === "search") openSearch();
   else if (a === "archive") toggleArchive();
   else if (a === "health") openHealth();
@@ -2475,6 +2477,7 @@ const openItemContext = (cid, iid) => {
   h += `<button class="ctx-item open" onclick="ctxAction('open')"><span class="ci-ic">${isLink ? '🔗' : '📝'}</span><span class="ci-txt">Open</span></button>`;
   h += `<button class="ctx-item copy" onclick="ctxAction('copy')"><span class="ci-ic">📋</span><span class="ci-txt">${isLink ? 'Copy Link' : 'Copy Note'}</span></button>`;
   h += `<button class="ctx-item add" onclick="ctxAction('add')"><span class="ci-ic">➕</span><span class="ci-txt">Add New Item</span></button>`;
+  h += `<button class="ctx-item edit ${isLocked ? 'locked-disabled' : ''}" onclick="${isLocked ? '' : 'ctxAction(\'edit\')'}"><span class="ci-ic">✎</span><span class="ci-txt">Edit Item</span></button>`;
   h += `<button class="ctx-item expiry" onclick="ctxAction('expiry')"><span class="ci-ic">⏰</span><span class="ci-txt">Set Expiry<div class="ci-sub">${it.expiry ? 'Current: ' + it.expiry : 'Auto-archive later'}</div></span></button>`;
   h += `<button class="ctx-item lock ${isLocked ? 'locked-disabled' : ''}" onclick="${isLocked ? '' : 'ctxAction(\'lock\')'}"><span class="ci-ic">🔒</span><span class="ci-txt">${it.locked ? 'Unlock Item' : 'Lock Item'}</span></button>`;
   h += `<button class="ctx-item hide" onclick="${isLocked ? '' : 'ctxAction(\'hide\')'}"><span class="ci-ic">👁️‍🗨️</span><span class="ci-txt">${it.hidden ? 'Unhide' : 'Hide Item'}</span></button>`;
@@ -2499,6 +2502,7 @@ const ctxAction = action => {
       const txt = c.type === "link" ? it.url : (it.content || it.title);
       navigator.clipboard.writeText(txt).then(() => toast("📋 Copied")).catch(() => toast("Failed"));
     } else if (action === "add") addItem(cid);
+    else if (action === "edit") editItem(cid, iid);
     else if (action === "expiry") {
       const cur = it.expiry || "";
       const d = prompt("Expiry date (YYYY-MM-DD, empty to remove):", cur);
