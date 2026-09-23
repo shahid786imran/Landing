@@ -3368,6 +3368,23 @@ const openNoteDetail = (cid, iid) => {
   $("ndEditActions").style.display = "none";
   $("ndOv").classList.add("on");
 };
+// Keyboard hide/show hone par edit modal ki height fix karo
+const fixEditModalHeight = () => {
+  const ndOv = document.getElementById("ndOv");
+  if (!ndOv || !ndOv.classList.contains("on")) return;
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const pp = ndOv.querySelector(".pp.full");
+  if (pp) {
+    pp.style.height = vh + "px";
+    pp.style.maxHeight = vh + "px";
+  }
+};
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", fixEditModalHeight);
+  window.visualViewport.addEventListener("scroll", fixEditModalHeight);
+}
+window.addEventListener("resize", fixEditModalHeight);
+window.addEventListener("orientationchange", () => setTimeout(fixEditModalHeight, 100));
 const ndClose = () => { $("ndOv").classList.remove("on"); clearInterval(draftTimer); };
 $("ndOv").onclick = e => e.target.id === "ndOv" && ndClose();
 const ndEnterEdit = () => {
@@ -3389,6 +3406,7 @@ const ndEnterEdit = () => {
       if (ind) ind.innerHTML = '💾 Saved';
     } catch (e) {}
   }, 5000);
+  setTimeout(fixEditModalHeight, 50);
 };
 window.mdInsert = (before, after) => {
   const ta = $("ndB");
