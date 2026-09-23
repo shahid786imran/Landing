@@ -3476,6 +3476,21 @@ window.addEventListener("online", updateOnlineStatus);
 window.addEventListener("offline", updateOnlineStatus);
 
 // ==================== EVENT LISTENERS & INIT ====================
+  // Desktop: right-click → Quick Actions (mobile long-press ka alternative)
+document.addEventListener("contextmenu", function (e) {
+  const hh = e.target.closest(".hh");
+  if (!hh) return;
+  const card = hh.closest(".card");
+  if (!card) return;
+  const fid = card.getAttribute("data-flipid");
+  if (!fid || !fid.startsWith("c-")) return;
+  const id = parseInt(fid.substring(2));
+  const c = cards.find(x => x.id === id);
+  if (!c) return;
+  e.preventDefault();
+  if (Date.now() - lastTouchTime < 700) return; // mobile par skip
+  openQuickActions(id);   // ← Edit Card ke bajaye Quick Actions khulega
+});
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
     cl(); nCl(); aCl(); eCl(); cfClose(); ndClose(); closeSheet(); setCl(); statsCl(); searchCl(); moveCl(); msCancel(); closeFilterSheet(); tagCl(); clearBinSelection(); ctxClose(); healthCl(); dupCl(); folderCl(); folderMgrCl(); undoCl(); closeQuickActions(); newHhCl(); snoozeCl();
