@@ -453,9 +453,9 @@ body.night .switch{border-color:var(--glass-bd)}
 .folder-header .fh-count{font-size:10px;color:var(--mt);font-weight:700;flex:none}
 .folder-header .fh-arrow{font-size:10px;color:var(--mt);flex:none;transition:transform .3s var(--e)}
 .folder-header .fh-arrow.rot{transform:rotate(90deg)}
-.folder-body{position:relative;padding-left:20px;overflow:hidden;transition:max-height .4s var(--e),opacity .3s var(--e)}
+.folder-body{position:relative;padding-left:0;overflow:hidden;transition:max-height .4s var(--e),opacity .3s var(--e)}
 .folder-body.collapsed{max-height:0!important;opacity:0;pointer-events:none}
-.folder-pipe{position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--pipe-color);border-radius:1px}
+.folder-pipe{position:absolute;left:7px;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--p),var(--p2));border-radius:2px;opacity:.5}
 .snooze-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .snooze-opt{padding:12px 8px;border-radius:12px;background:var(--glass);border:1.5px solid var(--glass-bd);color:var(--tx);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s var(--e)}
 .snooze-opt:hover{border-color:var(--p)}
