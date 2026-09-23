@@ -2287,7 +2287,7 @@ const renderCard = (c, idx, list) => {
   }).join('') : `<div class="ep" style="padding:24px 16px"><div class="bg" style="font-size:32px">${c.icon}</div><div class="ep-sub">No ${c.type}s yet</div></div>`;
   return `<div class="card ${c.pinned ? 'pinned' : ''} ${c.pinBottom ? 'pin-bottom' : ''} ${tagCls} ${colorCls} ${healthClass} ${isSelCard ? 'selected' : ''} ${c.hidden ? 'hidden-card' : ''} ${(c.snoozeUntil && c.snoozeUntil > Date.now()) ? 'snoozed-card' : ''}" data-flipid="c-${c.id}" data-cid="${c.id}">
     <div class="card-in" style="border-left-color:${c.color ? getColorHex(c.color) : 'transparent'}">
-      <div class="hh ${hb}" ontouchstart="startCardLongPress(event,${c.id})" ontouchend="cancelCardLongPress()" ontouchcancel="cancelCardLongPress()" oncontextmenu="event.preventDefault();editCard(${c.id})">
+      <div class="hh ${hb}" ontouchstart="startCardLongPress(event,${c.id})" ontouchend="cancelCardLongPress()" ontouchcancel="cancelCardLongPress()">
         <h2>${pinBadge}${pinBottomBadge}<span class="em">${renderIcon(c.icon)}</span> <span class="nm">${esc(c.name)}</span> <span class="ct ${cntColors}">${c.items.length}</span> ${tagLabel}${statsInline}${c.subtitle ? `<span class="sub">${esc(c.subtitle)}</span>` : ''}</h2>
         <span class="pin ${c.pinned ? 'on' : ''}">📌</span>
         <span class="sp"></span>
@@ -3490,7 +3490,6 @@ document.addEventListener("click", e => { if (!editAll) return; if (e.target.clo
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (settings.themeMode === "auto") applyAllSettings(); });
 document.addEventListener("click", function (e) { if (!e.target || !e.target.closest) return; const btn = e.target.closest("button"); if (!btn) return; const txt = (btn.textContent || "").trim(); if (btn.classList.contains("ep-btn") && txt === "Clear View") { e.preventDefault(); e.stopPropagation(); doHomeAction(); } }, true);
 document.addEventListener("click", function (e) { if (e.target.closest("button,.chk,a,input,textarea")) return; const hh = e.target.closest(".hh"); if (!hh) return; const card = hh.closest(".card"); if (!card) return; const fid = card.getAttribute("data-flipid"); if (!fid || !fid.startsWith("c-")) return; const id = parseInt(fid.substring(2)); const c = cards.find(x => x.id === id); if (!c || c.type === "header") return; e.preventDefault(); e.stopPropagation(); if (e.button === 2) return; toggleCollapse(id); haptic(8); }, true);
-document.addEventListener("contextmenu", function (e) { const hh = e.target.closest(".hh"); if (!hh) return; const card = hh.closest(".card"); if (!card) return; const fid = card.getAttribute("data-flipid"); if (!fid || !fid.startsWith("c-")) return; const id = parseInt(fid.substring(2)); const c = cards.find(x => x.id === id); if (!c) return; e.preventDefault(); editCard(id); });
 setInterval(() => { if (settings.showTimestamps || settings.showCardStats) { if (!showArchive) render(); } }, 60000);
 setInterval(checkExpiryNotifications, 30 * 60 * 1000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { checkExpiryNotifications(); checkExpiredItems(); } });
