@@ -2266,7 +2266,7 @@ const renderCard = (c, idx, list) => {
     const expBadge = it.expiry ? `<span class="expiry-badge" style="color:${getExpiryColor(it.expiry)}">${fmtExpiry(it.expiry)}</span>` : '';
     const lockInd = it.locked ? '<span class="lock-indicator on">🔒</span>' : '';
     const itemTagsHtml = it.tags && it.tags.length ? `<div class="item-tags">${it.tags.slice(0,2).map(t => { const m = getTagMeta(t); return `<span class="item-tag">${m.icon} ${esc(m.label)}</span>`; }).join('')}${it.tags.length > 2 ? `<span class="item-tag">+${it.tags.length - 2}</span>` : ''}</div>` : '';
-    return `<div class="rw ${nColor} ${isSel ? 'selected' : ''} ${expiredCls} ${it.locked ? 'locked-item' : ''} ${it.hidden ? 'hidden-item' : ''} ${(it.snoozeUntil && it.snoozeUntil > Date.now()) ? 'snoozed-item' : ''}" data-flipid="i-${it.id}" ontouchstart="onTS(event,${c.id},${it.id})" ontouchmove="onTM(event)" ontouchend="onTE()" ontouchcancel="onTE()" onclick="onRowClick(${c.id},${it.id})">
+    return `<div class="rw ${nColor} ${isSel ? 'selected' : ''} ${expiredCls} ${it.locked ? 'locked-item' : ''} ${it.hidden ? 'hidden-item' : ''} ${(it.snoozeUntil && it.snoozeUntil > Date.now()) ? 'snoozed-item' : ''}" data-flipid="i-${it.id}" ontouchstart="onTS(event,${c.id},${it.id})" ontouchmove="onTM(event)" ontouchend="onTE()" ontouchcancel="onTE()" onclick="onRowClick(${c.id},${it.id})" oncontextmenu="event.preventDefault()">
       <div class="swipe-bg"><div class="left-act">🗑 Delete</div><div class="right-act">✎ Edit</div></div>
       <div class="inner">
         <span class="chk ${(editAll || multiSelect.active) ? 'on' : ''}" onclick="event.stopPropagation();toggleRowSelect(${c.id},${it.id})">✓</span>
@@ -3490,6 +3490,23 @@ document.addEventListener("contextmenu", function (e) {
   e.preventDefault();
   if (Date.now() - lastTouchTime < 700) return; // mobile par skip
   openQuickActions(id);   // ← Edit Card ke bajaye Quick Actions khulega
+});
+  // Desktop: right-click on item → Item Context Menu
+document.addEventListener("contextmenu", function (e) {
+  const rw = e.target.closest(".rw");
+  if (!rw) return;
+  e.preventDefault();
+  if (Date.now() - lastTouchTime < 700) return; // mobile par skip
+  const fid = rw.getAttribute("data-flipid");
+  if (!fid || !fid.startsWith("i-")) return;
+  const iid = parseInt(fid.substring(2));
+  // Find card by looking up the parent card
+  const cardEl = rw.closest(".card");
+  if (!cardEl) return;
+  const cfid = cardEl.getAttribute("data-flipid");
+  if (!cfid || !cfid.startsWith("c-")) return;
+  const cid = parseInt(cfid.substring(2));
+  openItemContext(cid, iid);
 });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
