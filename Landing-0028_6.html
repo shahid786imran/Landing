@@ -2171,7 +2171,7 @@ sortedFolders.forEach(f => {
 });
       const ungrouped = list.filter(c => !c.folderId);
       const ugCollapsed = localStorage.getItem('nm_ungroupedCollapsed') === 'true';
-if (ungrouped.length) html += renderFolderGroup({ id: 'ungrouped', name: 'Ungrouped', icon: '🗂', _ungrouped: true, collapsed: settings.ungroupedCollapsed === true }, ungrouped);
+      if (ungrouped.length) html += renderFolderGroup({ id: 'ungrouped', name: 'Ungrouped', icon: '🗂', _ungrouped: true, collapsed: ugCollapsed }, ungrouped);
       $("cards").innerHTML = html || renderEmpty();
     } else {
       $("cards").innerHTML = list.length ? list.map((c, idx) => renderCard(c, idx, list)).join("") : renderEmpty();
@@ -2237,12 +2237,22 @@ window.toggleFolderGroup = (folderId) => {
     body.style.maxHeight = body.scrollHeight + 'px';
     arrow.classList.add('rot');
     setTimeout(() => body.style.maxHeight = 'none', 400);
-    if (folderId !== 'ungrouped') { const f = folders.find(x => x.id === folderId); if (f) f.collapsed = false; }
+    if (folderId === 'ungrouped') {
+      localStorage.setItem('nm_ungroupedCollapsed', 'false');
+    } else {
+      const f = folders.find(x => x.id === folderId);
+      if (f) f.collapsed = false;
+    }
   } else {
     body.style.maxHeight = body.scrollHeight + 'px';
     requestAnimationFrame(() => { body.classList.add('collapsed'); body.style.maxHeight = '0px'; });
     arrow.classList.remove('rot');
-    if (folderId !== 'ungrouped') { const f = folders.find(x => x.id === folderId); if (f) f.collapsed = true; }
+    if (folderId === 'ungrouped') {
+      localStorage.setItem('nm_ungroupedCollapsed', 'true');
+    } else {
+      const f = folders.find(x => x.id === folderId);
+      if (f) f.collapsed = true;
+    }
   }
   save();
 };
