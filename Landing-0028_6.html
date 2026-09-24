@@ -464,7 +464,7 @@ body.night .switch{border-color:var(--glass-bd)}
 .folder-body {
   position: relative;
   margin: 0;
-  padding: 8px 10px 10px 10px;
+  padding: 6px 0 6px 0;
   background: var(--card-bg);
   border-left: 3px solid var(--pipe-color);
   border-bottom: 3px solid var(--pipe-color);
@@ -2210,14 +2210,16 @@ const renderFolderGroup = (folder, cardList) => {
   let html = `<div class="folder-group" data-folder="${f.id}">`;
 const colorHex = f.color ? getColorHex(f.color) : 'transparent';
 const colorRgb = f.color ? getColorRgb(f.color) : null;
-const headerStyle = colorRgb ? `background:rgba(${colorRgb},.35);border-left:4px solid ${colorHex}` : '';
+const opacity = (f.colorOpacity !== undefined ? f.colorOpacity : 35) / 100;
+const headerStyle = colorRgb ? `background:rgba(${colorRgb},${opacity.toFixed(2)});border-left:4px solid ${colorHex}` : '';
+const bodyStyle = colorRgb ? `background:rgba(${colorRgb},${(opacity * 0.4).toFixed(2)})` : '';
 html += `<div class="folder-header" onclick="toggleFolderGroup('${f.id}')" style="${headerStyle}">
   <span class="fh-icon">${f.icon || '📁'}${f.pinned ? ' 📌' : ''}</span>
     <span class="fh-name">${esc(f.name)}</span>
     <span class="fh-count">${count} card${count !== 1 ? 's' : ''} · ${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
     <span class="fh-arrow ${isCollapsed ? '' : 'rot'}">▶</span>
   </div>`;
-  html += `<div class="folder-body ${isCollapsed ? 'collapsed' : ''}" id="fb-${f.id}">`;
+  html += `<div class="folder-body ${isCollapsed ? 'collapsed' : ''}" id="fb-${f.id}" style="${bodyStyle}">`;
   html += cardList.map((c, idx) => renderCard(c, idx, cardList)).join('');
   html += `</div></div>`;
   return html;
