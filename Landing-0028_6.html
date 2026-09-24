@@ -2207,7 +2207,14 @@ window.toggleFolderGroup = (folderId) => {
     body.style.maxHeight = body.scrollHeight + 'px';
     requestAnimationFrame(() => { body.classList.add('collapsed'); body.style.maxHeight = '0px'; });
     arrow.classList.remove('rot');
-    if (folderId !== 'ungrouped') { const f = folders.find(x => x.id === folderId); if (f) f.collapsed = true; }
+    if (folderId === 'ungrouped') {
+  settings._ungroupedCollapsed = true;
+  localStorage.setItem('nm_ungroupedCollapsed', 'true');
+  save();
+} else {
+  const f = folders.find(x => x.id === folderId); 
+  if (f) f.collapsed = true;
+}
   }
   save();
 };
