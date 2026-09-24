@@ -2170,8 +2170,8 @@ sortedFolders.forEach(f => {
   html += renderFolderGroup(f, folderCards);
 });
       const ungrouped = list.filter(c => !c.folderId);
-      const ugCollapsed = localStorage.getItem('nm_ungroupedCollapsed') === 'true';
-      if (ungrouped.length) html += renderFolderGroup({ id: 'ungrouped', name: 'Ungrouped', icon: '🗂', _ungrouped: true, collapsed: ugCollapsed }, ungrouped);
+     const ugCollapsed = localStorage.getItem('nm_ungroupedCollapsed') === 'true';
+if (ungrouped.length) html += renderFolderGroup({ id: 'ungrouped', name: 'Ungrouped', icon: '🗂', _ungrouped: true, collapsed: ugCollapsed }, ungrouped);
       $("cards").innerHTML = html || renderEmpty();
     } else {
       $("cards").innerHTML = list.length ? list.map((c, idx) => renderCard(c, idx, list)).join("") : renderEmpty();
