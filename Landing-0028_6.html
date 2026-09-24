@@ -321,6 +321,19 @@ body.night .pp{background:linear-gradient(180deg,rgba(30,41,59,.95),rgba(49,46,1
 .md-toolbar{display:flex;gap:4px;padding:6px 8px;margin-bottom:8px;background:var(--glass);border:1px solid var(--glass-bd);border-radius:10px;flex-wrap:wrap}
 .md-toolbar button{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:transparent;border:0;border-radius:6px;font-size:13px;color:var(--tx);font-weight:700;cursor:pointer}
 .md-help{margin-left:auto;color:var(--p);font-weight:800}
+.color-pop{position:absolute;z-index:99999;background:var(--s);border:1px solid var(--bd);border-radius:14px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.3);display:none;grid-template-columns:repeat(4,1fr);gap:8px;backdrop-filter:blur(10px)}
+.color-pop.on{display:grid;animation:fadeUp .2s var(--e)}
+.color-pop button{width:32px;height:32px;border-radius:50%;border:2px solid var(--glass-bd);cursor:pointer;padding:0;transition:.2s}
+.color-pop button:hover{transform:scale(1.15)}
+.color-pop button[data-c="red"]{background:#ef4444}
+.color-pop button[data-c="orange"]{background:#f97316}
+.color-pop button[data-c="yellow"]{background:#eab308}
+.color-pop button[data-c="green"]{background:#10b981}
+.color-pop button[data-c="blue"]{background:#3b82f6}
+.color-pop button[data-c="purple"]{background:#8b5cf6}
+.color-pop button[data-c="pink"]{background:#ec4899}
+.color-pop button[data-c="black"]{background:#1e1b4b}
+.color-pop button[data-c="remove"]{background:var(--glass);color:var(--mt);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px dashed var(--bd)}
 .draft-indicator{font-size:10px;color:var(--ok);font-weight:700;padding:4px 8px;display:flex;align-items:center;gap:4px}
 .draft-indicator .pulse{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.5s infinite}
 .toast{position:fixed;left:50%;bottom:120px;transform:translate(-50%,20px);z-index:99999;background:linear-gradient(135deg,#0f172a,#1e1b4b);color:#fff;padding:10px 15px;border-radius:14px;font-size:13px;font-weight:600;box-shadow:0 20px 40px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:.3s var(--e);max-width:calc(100vw - 32px);display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid rgba(255,255,255,.1)}
@@ -570,7 +583,17 @@ body.night .switch{border-color:var(--glass-bd)}
 <div class="ov" id="ndOv"><div class="pp full"><div class="pph"><div class="title-wrap"><span id="ndTitle">Note</span><span class="sub" id="ndSub"></span></div><div class="actions" id="ndActions"><button onclick="ndExportPDF()">📄</button><button onclick="ndShare()">📤</button><button onclick="ndEnterEdit()">✎</button><button class="rd" onclick="ndDeleteNote()">🗑</button><button onclick="ndClose()">✕</button></div><div class="actions" id="ndEditActions" style="display:none"><button class="sv" onclick="ndSaveEdit()">✓ Save</button><button onclick="ndCancelEdit()">✕</button></div></div><div class="ppb no-pad" style="flex:1;overflow-y:auto;user-select:text;-webkit-user-select:text"><div class="note-detail" id="ndBody"></div></div></div></div>
 
 <div class="ov" id="eov"><div class="pp"><div class="pph"><span id="ett">Edit</span><button onclick="eCl()">✕</button></div><div class="ppb" id="eBody"></div><div class="ppf"><button onclick="eCl()">Cancel</button><button class="pr" onclick="eSave()">Update</button></div></div></div>
-
+<div class="color-pop" id="colorPop">
+  <button data-c="red" onclick="wysiwygColor('red')" title="Red"></button>
+  <button data-c="orange" onclick="wysiwygColor('orange')" title="Orange"></button>
+  <button data-c="yellow" onclick="wysiwygColor('yellow')" title="Yellow"></button>
+  <button data-c="green" onclick="wysiwygColor('green')" title="Green"></button>
+  <button data-c="blue" onclick="wysiwygColor('blue')" title="Blue"></button>
+  <button data-c="purple" onclick="wysiwygColor('purple')" title="Purple"></button>
+  <button data-c="pink" onclick="wysiwygColor('pink')" title="Pink"></button>
+  <button data-c="black" onclick="wysiwygColor('black')" title="Black"></button>
+  <button data-c="remove" onclick="wysiwygColor('remove')" title="Remove Color">✕</button>
+</div>
 <div class="ov" id="confirmOv"><div class="pp"><div class="pph"><span id="cfTitle">Confirm</span><button onclick="cfClose()">✕</button></div><div class="ppb"><div class="confirm-icon" id="cfIcon">⚠️</div><div class="confirm-text" id="cfText">Are you sure?</div></div><div class="ppf"><button onclick="cfClose()">Cancel</button><button class="dg2" onclick="cfYes()">Yes</button></div></div></div>
 
 <div class="ov" id="tagOv"><div class="pp"><div class="pph"><span>Custom Tag</span><button onclick="tagCl()">✕</button></div><div class="ppb"><div class="fd"><label>Name</label><input id="tagName" placeholder="e.g. Shopping"></div><div class="fd"><label>Icon</label><div class="emoji-grid" id="tagIconGrid"></div></div><div class="fd"><label>Color</label><div class="color-picker" id="tagColorPicker"><div class="color-opt blue on" data-c="blue" onclick="pickTagColor('blue')"></div><div class="color-opt green" data-c="green" onclick="pickTagColor('green')"></div><div class="color-opt pink" data-c="pink" onclick="pickTagColor('pink')"></div><div class="color-opt orange" data-c="orange" onclick="pickTagColor('orange')"></div><div class="color-opt purple" data-c="purple" onclick="pickTagColor('purple')"></div><div class="color-opt cyan" data-c="cyan" onclick="pickTagColor('cyan')"></div></div></div></div><div class="ppf"><button onclick="tagCl()">Cancel</button><button class="pr" onclick="tagSave()">Add Tag</button></div></div></div>
@@ -688,6 +711,15 @@ const autoLinkRaw = t => {
 };
 const htmlToMarkdown = (html) => {
   let md = html;
+  md = md.replace(/<span[^>]*style="[^"]*color:\s*(#[0-9a-fA-F]{3,6}|rgb\([^)]+\))[^"]*"[^>]*>(.*?)<\/span>/gi, (m, color, txt) => {
+    const name = window.hexToColorName(color);
+    return name ? '{{' + name + '}}' + txt + '{{/' + name + '}}' : txt;
+  });
+  md = md.replace(/<font[^>]*color="([^"]+)"[^>]*>(.*?)<\/font>/gi, (m, color, txt) => {
+    const name = window.hexToColorName(color);
+    return name ? '{{' + name + '}}' + txt + '{{/' + name + '}}' : txt;
+  });
+  md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n# $1\n');
   md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n# $1\n');
   md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n## $1\n');
   md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '\n### $1\n');
@@ -728,6 +760,10 @@ const renderMarkdown = text => {
   h = h.replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
   h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, t, u) => `<a href="${u}" target="_blank" rel="noopener">${t}</a>`);
   h = h.split(/(<[^>]+>)/).map(p => p.startsWith("<") ? p : autoLinkRaw(p)).join("");
+    h = h.replace(/\{\{(\w+)\}\}(.*?)\{\{\/\1\}\}/gs, (m, color, txt) => {
+    const map = { red:'#ef4444', orange:'#f97316', yellow:'#eab308', green:'#10b981', blue:'#3b82f6', purple:'#8b5cf6', pink:'#ec4899', black:'#1e1b4b' };
+    return map[color] ? `<span style="color:${map[color]};font-weight:600">${txt}</span>` : txt;
+  });
   return h;
 };
 const fmtTime = ts => {
@@ -3527,6 +3563,7 @@ const ndEnterEdit = () => {
       <button type="button" onmousedown="event.preventDefault()" onclick="wysiwyg('insertUnorderedList')">•</button>
       <button type="button" onmousedown="event.preventDefault()" onclick="wysiwyg('formatBlock','blockquote')">❝</button>
       <button type="button" onmousedown="event.preventDefault()" onclick="wysiwygLink()">🔗</button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="toggleColorPicker(event)">🎨</button>
       <button class="md-help" onclick="showMdHelp()">?</button>
     </div>
     <input class="nd-edit-title" id="ndT" value="${esc(it.title)}">
@@ -3555,7 +3592,25 @@ window.wysiwyg = (cmd, val) => {
 };
 
 window.wysiwygLink = () => {
-window.wysiwygColor = (name) => {
+window.toggleColorPicker = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  const pop = $("colorPop");
+  if (!pop) return;
+  if (pop.classList.contains("on")) { pop.classList.remove("on"); return; }
+  const rect = e.target.getBoundingClientRect();
+  pop.style.top = (rect.bottom + 6) + "px";
+  pop.style.left = Math.max(10, Math.min(window.innerWidth - 180, rect.left - 60)) + "px";
+  pop.classList.add("on");
+};
+
+document.addEventListener("click", (e) => {
+  const pop = $("colorPop");
+  if (pop && pop.classList.contains("on") && !e.target.closest("#colorPop") && !e.target.closest('[onclick*="toggleColorPicker"]')) {
+    pop.classList.remove("on");
+  }
+}, true);
+  window.wysiwygColor = (name) => {
   const map = { red:'#ef4444', orange:'#f97316', yellow:'#eab308', green:'#10b981', blue:'#3b82f6', purple:'#8b5cf6', pink:'#ec4899', black:'#1e1b4b' };
   const hex = map[name];
   if (!hex) return;
