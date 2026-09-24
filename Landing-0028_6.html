@@ -675,6 +675,11 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const autoLink=t=>{const re=/\b((?:https?:\/\/|www\.)[^\s<]+|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|co|dev|app|me|edu|gov|info|xyz|online|site)(?:\/[^\s<]*)?)/gi;return esc(t).replace(re,m=>`<a href="${/^https?:\/\//i.test(m)?m:"https://"+m}" target="_blank" rel="noopener">${m}</a>`)};
 const haptic = (ms = 15) => { if (settings.vibrate && navigator.vibrate) navigator.vibrate(ms); };
+const autoLinkRaw = t => {
+  const re = /\b((?:https?:\/\/|www\.)[^\s<]+|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|co|dev|app|me|edu|gov|info|xyz|online|site)(?:\/[^\s<]*)?)/gi;
+  return t.replace(re, m => `<a href="${/^https?:\/\//i.test(m) ? m : "https://" + m}" target="_blank" rel="noopener">${m}</a>`);
+};
+
 const renderMarkdown = text => {
   if (!text) return "";
   let h = esc(text);
@@ -691,7 +696,7 @@ const renderMarkdown = text => {
   h = h.replace(/^\d+\. (.+)$/gm, (m, t) => `<li>${t}</li>`);
   h = h.replace(/(<li>.*<\/li>\n?)+/g, m => `<ul>${m}</ul>`);
   h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, t, u) => `<a href="${u}" target="_blank" rel="noopener">${t}</a>`);
-  h = autoLink(h);
+  h = h.split(/(<[^>]+>)/).map(p => p.startsWith("<") ? p : autoLinkRaw(p)).join("");
   return h;
 };
 const fmtTime = ts => {
@@ -861,6 +866,7 @@ const getFolderCount = id => {
   if (id === "smart-fav") return cards.filter(c => c.fav).length;
   if (id === "smart-untagged") return cards.filter(c => !c.tags || c.tags.length === 0).length;
   if (id === "smart-stale") return cards.filter(c => getHealth(c) === "stale").length;
+  if (id === "smart-empty") return cards.filter(c => getHealth(c) === "empty").length;
   if (id === "smart-dead") return cards.filter(c => getHealth(c) === "dead").length;
   return cards.filter(c => c.folderId === id).length;
 };
@@ -871,6 +877,7 @@ const filterByFolder = (list, id) => {
   if (id === "smart-fav") return list.filter(c => c.fav);
   if (id === "smart-untagged") return list.filter(c => !c.tags || c.tags.length === 0);
   if (id === "smart-stale") return list.filter(c => getHealth(c) === "stale");
+  if (id === "smart-empty") return list.filter(c => getHealth(c) === "empty");
   if (id === "smart-dead") return list.filter(c => getHealth(c) === "dead");
   return list.filter(c => c.folderId === id);
 };
@@ -1208,6 +1215,7 @@ const fabTap = e => {
 const handleGestureAction = a => {
   if (a === "filter") openFilterSheet();
   else if (a === "context") openSheet();
+  else if (a === "quickadd") openAddMenu();      // 👈 YE NAYI LINE
   else if (a === "settings") openSettings();
   else if (a === "search") openSearch();
   else if (a === "archive") toggleArchive();
@@ -2363,10 +2371,10 @@ fab.addEventListener("touchstart", e => {
   fabTouch = { x0: t.clientX, y0: t.clientY, dx: 0, dy: 0, active: true, isDragging: false };
   longPressFired = false;
   clearTimeout(longPressTimer);
-  if (settings.longPress === 'filter' || settings.longPress === 'context') {
+    if (settings.longPress && settings.longPress !== 'none') {
     longPressTimer = setTimeout(() => {
       longPressTimer = null; longPressFired = true; haptic(30);
-      handleGestureAction(settings.longPress === 'filter' ? 'filter' : 'context');
+      handleGestureAction(settings.longPress);
     }, 500);
   }
 }, { passive: true });
@@ -2417,10 +2425,10 @@ fab.addEventListener("mousedown", e => {
   fabTouch = { x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, active: true, isDragging: false };
   longPressFired = false;
   clearTimeout(longPressTimer);
-  if (settings.longPress === 'filter' || settings.longPress === 'context') {
+    if (settings.longPress && settings.longPress !== 'none') {
     longPressTimer = setTimeout(() => {
       longPressTimer = null; longPressFired = true; haptic(30);
-      handleGestureAction(settings.longPress === 'filter' ? 'filter' : 'context');
+      handleGestureAction(settings.longPress);
     }, 500);
   }
 });
@@ -2676,7 +2684,16 @@ openHealth = () => {
 };
 healthCl = () => $("healthOv").classList.remove("on");
 $("healthOv").onclick = e => e.target.id === "healthOv" && healthCl();
-window.healthView = h => { healthCl(); doHomeAction(); currentFolder = h === 'dead' ? 'smart-dead' : h === 'stale' ? 'smart-stale' : 'all'; currentFolderLabel = h.charAt(0).toUpperCase() + h.slice(1); render(); };
+window.healthView = h => {
+  healthCl();
+  doHomeAction();
+  currentFolder = h === 'dead' ? 'smart-dead'
+                : h === 'stale' ? 'smart-stale'
+                : h === 'empty' ? 'smart-empty'
+                : 'all';
+  currentFolderLabel = h.charAt(0).toUpperCase() + h.slice(1);
+  render();
+};
 window.healthArchiveAll = h => { const list = cards.filter(c => getHealth(c) === h && c.type !== 'header'); if (!list.length) return; showConfirm('Archive All', list.length + ' cards archived.', '🗄', () => { list.forEach(c => doArchiveCard(c.id, true)); save(); render(); healthCl(); toast('🗄 ' + list.length + ' archived'); }); };
 openDupScan = () => { const body = $("dupBody"); body.innerHTML = `<div class="dup-scan-progress"><div style="font-size:16px;font-weight:800;color:var(--p)">🔍 Scanning...</div><div class="dsp-bar"><div class="dsp-fill" id="dupProgress" style="width:0%"></div></div></div>`; $("dupOv").classList.add("on"); let p = 0; const iv = setInterval(() => { p += Math.random() * 20 + 10; if (p > 100) p = 100; const el = $("dupProgress"); if (el) el.style.width = p + '%'; if (p >= 100) { clearInterval(iv); renderDupResults(); } }, 200); };
 dupCl = () => $("dupOv").classList.remove("on");
