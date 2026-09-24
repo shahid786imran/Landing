@@ -584,15 +584,15 @@ body.night .switch{border-color:var(--glass-bd)}
 
 <div class="ov" id="eov"><div class="pp"><div class="pph"><span id="ett">Edit</span><button onclick="eCl()">✕</button></div><div class="ppb" id="eBody"></div><div class="ppf"><button onclick="eCl()">Cancel</button><button class="pr" onclick="eSave()">Update</button></div></div></div>
 <div class="color-pop" id="colorPop">
-  <button data-c="red" onclick="wysiwygColor('red')" title="Red"></button>
-  <button data-c="orange" onclick="wysiwygColor('orange')" title="Orange"></button>
-  <button data-c="yellow" onclick="wysiwygColor('yellow')" title="Yellow"></button>
-  <button data-c="green" onclick="wysiwygColor('green')" title="Green"></button>
-  <button data-c="blue" onclick="wysiwygColor('blue')" title="Blue"></button>
-  <button data-c="purple" onclick="wysiwygColor('purple')" title="Purple"></button>
-  <button data-c="pink" onclick="wysiwygColor('pink')" title="Pink"></button>
-  <button data-c="black" onclick="wysiwygColor('black')" title="Black"></button>
-  <button data-c="remove" onclick="wysiwygColor('remove')" title="Remove Color">✕</button>
+  <button data-c="red" onmousedown="event.preventDefault()" onclick="wysiwygColor('red')" title="Red"></button>
+  <button data-c="orange" onmousedown="event.preventDefault()" onclick="wysiwygColor('orange')" title="Orange"></button>
+  <button data-c="yellow" onmousedown="event.preventDefault()" onclick="wysiwygColor('yellow')" title="Yellow"></button>
+  <button data-c="green" onmousedown="event.preventDefault()" onclick="wysiwygColor('green')" title="Green"></button>
+  <button data-c="blue" onmousedown="event.preventDefault()" onclick="wysiwygColor('blue')" title="Blue"></button>
+  <button data-c="purple" onmousedown="event.preventDefault()" onclick="wysiwygColor('purple')" title="Purple"></button>
+  <button data-c="pink" onmousedown="event.preventDefault()" onclick="wysiwygColor('pink')" title="Pink"></button>
+  <button data-c="black" onmousedown="event.preventDefault()" onclick="wysiwygColor('black')" title="Black"></button>
+  <button data-c="remove" onmousedown="event.preventDefault()" onclick="wysiwygColor('remove')" title="Remove Color">✕</button>
 </div>
 <div class="ov" id="confirmOv"><div class="pp"><div class="pph"><span id="cfTitle">Confirm</span><button onclick="cfClose()">✕</button></div><div class="ppb"><div class="confirm-icon" id="cfIcon">⚠️</div><div class="confirm-text" id="cfText">Are you sure?</div></div><div class="ppf"><button onclick="cfClose()">Cancel</button><button class="dg2" onclick="cfYes()">Yes</button></div></div></div>
 
@@ -3598,6 +3598,11 @@ window.toggleColorPicker = (e) => {
   const pop = $("colorPop");
   if (!pop) return;
   if (pop.classList.contains("on")) { pop.classList.remove("on"); return; }
+  
+  // 👈 Save selection (ye nayi line hai)
+  const sel = window.getSelection();
+  if (sel.rangeCount > 0) _savedRange = sel.getRangeAt(0).cloneRange();
+  
   const rect = e.target.getBoundingClientRect();
   pop.style.top = (rect.bottom + 6) + "px";
   pop.style.left = Math.max(10, Math.min(window.innerWidth - 180, rect.left - 60)) + "px";
@@ -3610,15 +3615,36 @@ document.addEventListener("click", (e) => {
     pop.classList.remove("on");
   }
 }, true);
-  window.wysiwygColor = (name) => {
+  let _savedRange = null;
+
+window.wysiwygColor = (name) => {
+  const pop = $("colorPop");
+  if (pop) pop.classList.remove("on");
+  
+  const b = $("ndB");
+  if (!b) return;
+  
+  // Restore selection
+  if (_savedRange) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(_savedRange);
+  }
+  
+  b.focus();
+  
+  if (name === 'remove') {
+    document.execCommand('removeFormat', false, null);
+    return;
+  }
+  
   const map = { red:'#ef4444', orange:'#f97316', yellow:'#eab308', green:'#10b981', blue:'#3b82f6', purple:'#8b5cf6', pink:'#ec4899', black:'#1e1b4b' };
   const hex = map[name];
   if (!hex) return;
+  
+  // Force CSS mode (Chrome default ke liye)
+  try { document.execCommand('styleWithCSS', false, true); } catch(e) {}
   document.execCommand('foreColor', false, hex);
-  const b = $("ndB");
-  if (b) b.focus();
-  const pop = $("colorPop");
-  if (pop) pop.classList.remove("on");
 };
 
 window.hexToColorName = (hex) => {
