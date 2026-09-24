@@ -536,7 +536,11 @@ body.night .switch{border-color:var(--glass-bd)}
 <div class="fd" id="fTitle"><label>Title</label><input id="aTitle" placeholder="e.g. My Title"></div>
 <div class="fd" id="fUrl"><label>URL</label><input id="aUrl" placeholder="https://example.com"></div>
 <div class="fd" id="fSubtitle"><label>Subtitle (optional)</label><input id="aSubtitle" placeholder="e.g. Personal links"></div>
-<div class="fd" id="fFolder"><label>Folder</label><select id="aFolder"></select></div>
+<div class="fd" id="fFolder">
+  <label>Folder</label>
+  <select id="aFolder"></select>
+  <button type="button" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;background:var(--glass);border:1.5px dashed var(--p);color:var(--p);font-weight:800;font-size:12px;cursor:pointer;font-family:inherit" onclick="openFolderModal()">➕ New Folder</button>
+</div>
 <div class="fd"><label>Tags (multiple)</label><div class="tag-picker" id="tagPicker"></div></div>
 <div class="fd"><label>Color (optional)</label><div class="color-picker" id="cardColorPicker"><div class="color-opt c0 on" data-c="" onclick="pickCardColor('')"></div><div class="color-opt red" data-c="red" onclick="pickCardColor('red')"></div><div class="color-opt orange" data-c="orange" onclick="pickCardColor('orange')"></div><div class="color-opt yellow" data-c="yellow" onclick="pickCardColor('yellow')"></div><div class="color-opt green" data-c="green" onclick="pickCardColor('green')"></div><div class="color-opt blue" data-c="blue" onclick="pickCardColor('blue')"></div><div class="color-opt purple" data-c="purple" onclick="pickCardColor('purple')"></div><div class="color-opt pink" data-c="pink" onclick="pickCardColor('pink')"></div><div class="color-opt cyan" data-c="cyan" onclick="pickCardColor('cyan')"></div></div></div>
 <div class="fd" id="fIcon"><label>Icon</label><div class="emoji-grid" id="emojiGrid"></div></div>
@@ -1415,7 +1419,18 @@ window.openFolderModal = editId => {
   buildEmojiGrid("folderIconGrid", currentFolderIcon, e => currentFolderIcon = e);
   $("folderOv").classList.add("on");
 };
-const folderCl = () => $("folderOv").classList.remove("on");
+const folderCl = () => {
+  $("folderOv").classList.remove("on");
+  const aov = $("aov");
+  if (aov && aov.classList.contains("on")) {
+    const sel = $("aFolder");
+    if (sel) {
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">No Folder</option>' + folders.map(f => `<option value="${f.id}">${f.icon || "📁"} ${esc(f.name)}</option>`).join("");
+      if (folders.find(f => f.id === cur)) sel.value = cur;
+    }
+  }
+};
 $("folderOv").onclick = e => e.target.id === "folderOv" && folderCl();
 const folderSave = () => {
   const name = $("folderName").value.trim();
