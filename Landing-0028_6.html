@@ -686,7 +686,31 @@ const autoLinkRaw = t => {
   const re = /\b((?:https?:\/\/|www\.)[^\s<]+|[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|co|dev|app|me|edu|gov|info|xyz|online|site)(?:\/[^\s<]*)?)/gi;
   return t.replace(re, m => `<a href="${/^https?:\/\//i.test(m) ? m : "https://" + m}" target="_blank" rel="noopener">${m}</a>`);
 };
-
+const htmlToMarkdown = (html) => {
+  let md = html;
+  md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n# $1\n');
+  md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n## $1\n');
+  md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '\n### $1\n');
+  md = md.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**');
+  md = md.replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**');
+  md = md.replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*');
+  md = md.replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*');
+  md = md.replace(/<s[^>]*>(.*?)<\/s>/gi, '~~$1~~');
+  md = md.replace(/<strike[^>]*>(.*?)<\/strike>/gi, '~~$1~~');
+  md = md.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
+  md = md.replace(/<pre[^>]*>(.*?)<\/pre>/gi, '\n```\n$1\n```\n');
+  md = md.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '\n> $1\n');
+  md = md.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
+  md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n');
+  md = md.replace(/<\/?(ul|ol)[^>]*>/gi, '');
+  md = md.replace(/<br\s*\/?>/gi, '\n');
+  md = md.replace(/<div[^>]*>(.*?)<\/div>/gi, '$1\n');
+  md = md.replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n');
+  md = md.replace(/<[^>]+>/g, '');
+  md = md.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
+  md = md.replace(/\n{3,}/g, '\n\n');
+  return md.trim();
+};
 const renderMarkdown = text => {
   if (!text) return "";
   let h = esc(text);
@@ -1742,7 +1766,12 @@ const openMovePicker = () => {
   picker.innerHTML = h;
   $("moveOv").classList.add("on");
 };
-const moveCl = () => $("moveOv").classList.remove("on");
+const moveCl = () => {
+  $("moveOv").classList.remove("on");
+  if (multiSelect.active && multiSelect.ids.size === 1 && [...multiSelect.ids][0].startsWith('c-')) {
+    msCancel();
+  }
+};
 $("moveOv").onclick = e => e.target.id === "moveOv" && moveCl();
 const doMoveToFolder = folderId => {
   moveCl();
@@ -1942,7 +1971,7 @@ const checkSnoozed = () => {
       toast("💤 Card wapas aa gaya");
     }
   });
-  if (changed) save();
+  if (changed) { save(); render(); }
 };
 setInterval(checkSnoozed, 60000);
 
@@ -3487,7 +3516,23 @@ const ndEnterEdit = () => {
   ndEditMode = true;
   $("ndTitle").textContent = "Editing...";
   $("ndSub").textContent = "Auto-save ON";
-  $("ndBody").innerHTML = `<div class="md-toolbar"><button onclick="mdInsert('**','**')"><b>B</b></button><button onclick="mdInsert('*','*')"><i>I</i></button><button onclick="mdInsert('~~','~~')"><s>S</s></button><button onclick="mdInsert('\`','\`')">&lt;/&gt;</button><button onclick="mdInsert('[','](url)')">🔗</button><button onclick="mdInsert('- ','')">•</button><button onclick="mdInsert('# ','')">H</button><button class="md-help" onclick="showMdHelp()">?</button></div><input class="nd-edit-title" id="ndT" value="${esc(it.title)}"><textarea class="nd-edit-body" id="ndB">${esc(it.content)}</textarea><div class="draft-indicator" id="draftInd"><span class="pulse"></span> Auto-save ON</div>`;
+  $("ndBody").innerHTML = `
+    <div class="md-toolbar">
+      <button type="button" onmousedown="event.preventDefault()" onclick="wysiwyg('bold')"><b>B</b></button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="wysiwyg('italic')"><i>I</i></button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="wysiwyg('strikeThrough')"><s>S</s></button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="wysiwyg('formatBlock','h1')">H1</button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="wysiwyg('formatBlock','h2')">H2</button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="wysiwyg('formatBlock','h3')">H3</button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="wysiwyg('insertUnorderedList')">•</button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="wysiwyg('formatBlock','blockquote')">❝</button>
+      <button type="button" onmousedown="event.preventDefault()" onclick="wysiwygLink()">🔗</button>
+      <button class="md-help" onclick="showMdHelp()">?</button>
+    </div>
+    <input class="nd-edit-title" id="ndT" value="${esc(it.title)}">
+    <div class="nd-edit-body" id="ndB" contenteditable="true" style="min-height:200px;padding:10px;border:1px solid var(--bd);border-radius:10px;outline:none;background:var(--glass)">${it.content ? renderMarkdown(it.content) : ''}</div>
+    <div class="draft-indicator" id="draftInd"><span class="pulse"></span> Auto-save ON</div>
+  `;
   $("ndActions").style.display = "none";
   $("ndEditActions").style.display = "flex";
   clearInterval(draftTimer);
@@ -3496,12 +3541,25 @@ const ndEnterEdit = () => {
     if (!t || !b || !ndCur.cid) return;
     const k = "nm_draft_" + ndCur.cid + "_" + ndCur.iid;
     try {
-      localStorage.setItem(k, JSON.stringify({ title: t.value, content: b.value, ts: Date.now() }));
+      localStorage.setItem(k, JSON.stringify({ title: t.value, content: htmlToMarkdown(b.innerHTML), ts: Date.now() }));
       const ind = $("draftInd");
       if (ind) ind.innerHTML = '💾 Saved';
     } catch (e) {}
   }, 5000);
   setTimeout(fixEditModalHeight, 50);
+};
+window.wysiwyg = (cmd, val) => {
+  document.execCommand(cmd, false, val || null);
+  const b = $("ndB");
+  if (b) b.focus();
+};
+
+window.wysiwygLink = () => {
+  const url = prompt("URL daalo:", "https://");
+  if (!url) return;
+  document.execCommand("createLink", false, url);
+  const b = $("ndB");
+  if (b) b.focus();
 };
 window.mdInsert = (before, after) => {
   const ta = $("ndB");
@@ -3520,7 +3578,7 @@ const ndSaveEdit = () => {
   clearInterval(draftTimer);
   const c = cards.find(x => x.id === ndCur.cid), it = c.items.find(x => x.id === ndCur.iid);
   it.title = $("ndT").value.trim() || "Untitled";
-  it.content = $("ndB").value;
+  it.content = htmlToMarkdown($("ndB").innerHTML);
   it.updated = Date.now();
   c.updated = Date.now();
   localStorage.removeItem("nm_draft_" + ndCur.cid + "_" + ndCur.iid);
@@ -3722,6 +3780,8 @@ document.addEventListener("keydown", e => {
   if ((e.ctrlKey || e.metaKey) && e.key === "n") { e.preventDefault(); openAddMenu(); return; }
   if ((e.ctrlKey || e.metaKey) && e.key === "h") { e.preventDefault(); doHomeAction(); return; }
   if ((e.ctrlKey || e.metaKey) && e.key === "z") { e.preventDefault(); doUndo(); return; }
+  if (ndEditMode && (e.ctrlKey || e.metaKey) && e.key === "b") { e.preventDefault(); document.execCommand("bold"); return; }
+  if (ndEditMode && (e.ctrlKey || e.metaKey) && e.key === "i") { e.preventDefault(); document.execCommand("italic"); return; }
 });
 document.addEventListener("click", e => { if (!editAll) return; if (e.target.closest('.card,.fab,.sheet,.ov,.multiselect-bar,.bin-bar,.ctx-ov')) return; editAll = false; render(); toast('Edit OFF'); });
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (settings.themeMode === "auto") applyAllSettings(); });
