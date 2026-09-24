@@ -812,6 +812,8 @@ let settings = {
   expiryNotifDays: localStorage.getItem("nm_expiryNotifDays") || "1",
   listView: localStorage.getItem("nm_listView") || "expanded",
   showFolders:localStorage.getItem("nm_showFolders")!=="false",
+  ungroupedCollapsed: localStorage.getItem("nm_ungroupedCollapsed") === "true",
+  
 };
 const toastTimes = { short: 1000, normal: 1500, long: 3000 };
 
@@ -2169,7 +2171,7 @@ sortedFolders.forEach(f => {
 });
       const ungrouped = list.filter(c => !c.folderId);
       const ugCollapsed = localStorage.getItem('nm_ungroupedCollapsed') === 'true';
-if (ungrouped.length) html += renderFolderGroup({ id: 'ungrouped', name: 'Ungrouped', icon: '🗂', _ungrouped: true, collapsed: ugCollapsed }, ungrouped);
+if (ungrouped.length) html += renderFolderGroup({ id: 'ungrouped', name: 'Ungrouped', icon: '🗂', _ungrouped: true, collapsed: settings.ungroupedCollapsed === true }, ungrouped);
       $("cards").innerHTML = html || renderEmpty();
     } else {
       $("cards").innerHTML = list.length ? list.map((c, idx) => renderCard(c, idx, list)).join("") : renderEmpty();
