@@ -3555,6 +3555,28 @@ window.wysiwyg = (cmd, val) => {
 };
 
 window.wysiwygLink = () => {
+window.wysiwygColor = (name) => {
+  const map = { red:'#ef4444', orange:'#f97316', yellow:'#eab308', green:'#10b981', blue:'#3b82f6', purple:'#8b5cf6', pink:'#ec4899', black:'#1e1b4b' };
+  const hex = map[name];
+  if (!hex) return;
+  document.execCommand('foreColor', false, hex);
+  const b = $("ndB");
+  if (b) b.focus();
+  const pop = $("colorPop");
+  if (pop) pop.classList.remove("on");
+};
+
+window.hexToColorName = (hex) => {
+  if (!hex) return '';
+  hex = String(hex).toLowerCase().trim();
+  const rgbMatch = hex.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1]), g = parseInt(rgbMatch[2]), b = parseInt(rgbMatch[3]);
+    hex = '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+  }
+  const map = { '#ef4444':'red', '#f97316':'orange', '#eab308':'yellow', '#10b981':'green', '#3b82f6':'blue', '#8b5cf6':'purple', '#ec4899':'pink', '#1e1b4b':'black' };
+  return map[hex] || '';
+};
   const url = prompt("URL daalo:", "https://");
   if (!url) return;
   document.execCommand("createLink", false, url);
