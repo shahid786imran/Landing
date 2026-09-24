@@ -1309,6 +1309,18 @@ const pickTagColor = c => {
 const pickFolderColor = c => {
   currentFolderColor = c;
   document.querySelectorAll("#folderColorPicker .color-opt").forEach(o => o.classList.toggle("on", o.dataset.c === c));
+  const preview = document.getElementById("folderColorPreview");
+  if (preview) {
+    const rgb = getColorRgb(c);
+    const hex = getColorHex(c);
+    if (rgb) {
+      preview.style.background = `rgba(${rgb},.35)`;
+      preview.style.borderLeft = `4px solid ${hex}`;
+    } else {
+      preview.style.background = "";
+      preview.style.borderLeft = "none";
+    }
+  }
 };
 const setCardOpacity = v => {
   currentCardColorOpacity = parseInt(v);
@@ -1416,7 +1428,7 @@ const folderSave = () => {
     folders.push({ id: "f_" + Date.now(), name, icon: currentFolderIcon, color: currentFolderColor, created: Date.now() });
     toast("✓ Folder created");
   }
-  save(); folderCl();
+  save(); folderCl(); render();   // 👈 render() add kiya
 };
 const openFolderMgr = () => {
   const body = $("folderMgrBody");
