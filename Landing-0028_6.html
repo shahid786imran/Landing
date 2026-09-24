@@ -3107,12 +3107,14 @@ editItem = (cid, iid) => {
   editItemIcon = it.icon || (c.type === 'link' ? '🔗' : '📝');
   currentNoteColor = it.color || '';
   itemTag = it.tags || [];
+  const moveOptions = `<div class="fd"><label>Move to Card</label><select id="eMoveCard"><option value="">— Current Card —</option>${cards.filter(x => x.id !== cid && x.type !== 'header').map(x => `<option value="${x.id}">${x.icon || '📁'} ${esc(x.name)}</option>`).join('')}</select></div>`;
   if (c.type === 'link') {
     $("ett").textContent = "Edit Link";
     $("eBody").innerHTML = `
       <div class="fd"><label>Title</label><input id="e1" value="${esc(it.title)}"></div>
       <div class="fd"><label>URL</label><input id="e2" value="${esc(it.url)}"></div>
       <button class="fetch-btn" onclick="fetchFaviconEdit()">🌐 Fetch Icon from URL</button>
+      ${moveOptions}
       <div class="fd"><label>Tags (multiple)</label><div class="tag-picker" id="editTagPicker"></div></div>
       <div class="fd"><label>Expiry</label><input id="eExp" type="date"></div>
       <div class="fd"><label>Icon</label><div class="emoji-grid" id="editItemIconGrid"></div></div>
@@ -3122,6 +3124,7 @@ editItem = (cid, iid) => {
     $("eBody").innerHTML = `
       <div class="fd"><label>Title</label><input id="e1" value="${esc(it.title)}"></div>
       <div class="fd"><label>Detail</label><textarea id="e2" rows="6">${esc(it.content || '')}</textarea></div>
+      ${moveOptions}
       <div class="fd"><label>Tags (multiple)</label><div class="tag-picker" id="editTagPicker"></div></div>
       <div class="fd"><label>Expiry</label><input id="eExp" type="date"></div>
       <div class="fd"><label>Icon</label><div class="emoji-grid" id="editItemIconGrid"></div></div>
@@ -3157,7 +3160,7 @@ eSave = () => {
     save(); eCl(); render(); toast("✓ Updated");
     return;
   }
-  if (editing.iid) {
+    if (editing.iid) {
     const c = cards.find(x => x.id === editing.cid);
     if (!c) return;
     const it = c.items.find(x => x.id === editing.iid);
@@ -3182,7 +3185,19 @@ eSave = () => {
     }
     it.updated = Date.now();
     c.updated = Date.now();
-    save(); eCl(); render(); checkExpiredItems(); toast("✓ Updated");
+    const moveTo = $("eMoveCard") ? $("eMoveCard").value : "";
+    if (moveTo) {
+      const targetId = parseInt(moveTo);
+      const target = cards.find(x => x.id === targetId);
+      if (target && target.id !== c.id && !target.locked) {
+        const idx = c.items.findIndex(x => x.id === it.id);
+        if (idx >= 0) c.items.splice(idx, 1);
+        target.items.push(it);
+        target.updated = Date.now();
+        toast("📦 Moved to " + (target.name || "card"));
+      }
+    }
+    save(); eCl(); render(); checkExpiredItems();
     return;
   }
   // fallback to card edit
