@@ -4739,6 +4739,10 @@ window.addEventListener("resize", fixEditModalHeight);
 window.addEventListener("orientationchange", () => setTimeout(fixEditModalHeight, 100));
 
 document.addEventListener("touchend", function (e) {
+  if (ndEditMode) {
+    const editA = e.target.closest(".nd-edit-body a");
+    if (editA) { e.preventDefault(); e.stopPropagation(); return; }
+  }
   const a = e.target.closest(".note-detail a");
   if (!a) return;
   const href = a.getAttribute("href");
