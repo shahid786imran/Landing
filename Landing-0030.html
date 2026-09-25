@@ -3182,9 +3182,6 @@ const openMovePicker = () => {
 const moveCl = () => {
   $("moveOv").classList.remove("on");
   popModal();
-  if (multiSelect.active && multiSelect.ids.size === 1 && [...multiSelect.ids][0].startsWith('c-')) {
-    msCancel();
-  }
 };
 const doMoveToFolder = folderId => {
   moveCl();
