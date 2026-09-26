@@ -3439,7 +3439,7 @@ const renderCard = (c, idx, list) => {
     const hideIcon = c.hidden ? '<span class="hide-icon on">👁️‍🗨️</span>' : '';
     const snoozeIcon = (c.snoozeUntil && c.snoozeUntil > Date.now()) ? '<span class="snooze-icon on">💤</span>' : '';
     const snoozeUnlim = (c.snoozeUntil === -1) ? '<span class="snooze-icon on">💤</span>' : '';
-    return `<div class="card ${c.pinned ? 'pinned' : ''} ${c.pinBottom ? 'pin-bottom' : ''} ${isSel ? 'selected' : ''} ${c.hidden ? 'hidden-card' : ''} ${(c.snoozeUntil && c.snoozeUntil > Date.now()) ? 'snoozed-card' : ''}" data-flipid="c-${c.id}" data-cid="${c.id}">
+    return `<div class="card ${c.pinned ? 'pinned' : ''} ${c.pinBottom ? 'pin-bottom' : ''} ${isSel ? 'selected' : ''} ${c.hidden ? 'hidden-card' : ''} ${(c.snoozeUntil && (c.snoozeUntil === -1 || c.snoozeUntil > Date.now())) ? 'snoozed-card' : ''}" data-flipid="c-${c.id}" data-cid="${c.id}">
       <div class="card-in" style="border-left-color:${c.color ? getColorHex(c.color) : 'transparent'}">
         <div class="hcard" ${headerStyle} onclick="if(!event.target.closest('.ac,.chk'))window.open('${esc(safeUrl(c.url))}','_blank','noopener')">
           <span class="chk ${editAll ? 'on' : ''}" onclick="event.stopPropagation();toggleCardSelect(${c.id})">✓</span>
@@ -3524,7 +3524,7 @@ const renderCard = (c, idx, list) => {
       </div>
     </div>`;
   }).join('') : `<div class="ep" style="padding:24px 16px"><div class="bg" style="font-size:32px">${c.icon}</div><div class="ep-sub">No ${c.type}s yet</div></div>`;
-  return `<div class="card ${c.pinned ? 'pinned' : ''} ${c.pinBottom ? 'pin-bottom' : ''} ${healthClass} ${isSelCard ? 'selected' : ''} ${c.hidden ? 'hidden-card' : ''} ${(c.snoozeUntil && c.snoozeUntil > Date.now()) ? 'snoozed-card' : ''}" data-flipid="c-${c.id}" data-cid="${c.id}">
+  return `<div class="card ${c.pinned ? 'pinned' : ''} ${c.pinBottom ? 'pin-bottom' : ''} ${healthClass} ${isSelCard ? 'selected' : ''} ${c.hidden ? 'hidden-card' : ''} ${(c.snoozeUntil && (c.snoozeUntil === -1 || c.snoozeUntil > Date.now())) ? 'snoozed-card' : ''}" data-flipid="c-${c.id}" data-cid="${c.id}">
     <div class="card-in" style="border-left-color:${c.color ? getColorHex(c.color) : 'transparent'}">
       <div class="hh ${hb}" ${headerBorderStyle} ontouchstart="startCardLongPress(event,${c.id})" ontouchend="cancelCardLongPress()" ontouchcancel="cancelCardLongPress()">
         <span class="chk ${editAll ? 'on' : ''}" onclick="event.stopPropagation();toggleCardSelect(${c.id})">✓</span>
@@ -3571,7 +3571,7 @@ const filterList = list => {
   if (currentFilter === "fav") return r.filter(c => c.fav);
   if (currentFilter === "today") { const s = new Date(); s.setHours(0,0,0,0); return r.filter(c => c.updated && c.updated >= s.getTime()); }
   if (currentFilter === "hidden") return r.filter(c => c.hidden);
-  if (currentFilter === "snoozed") return r.filter(c => c.snoozeUntil && c.snoozeUntil > Date.now());
+  if (currentFilter === "snoozed") return r.filter(c => c.snoozeUntil && (c.snoozeUntil === -1 || c.snoozeUntil > Date.now()));
   if (currentFilter === "locked") return r.filter(c => c.locked);
   return r.filter(c => c.tags && c.tags.includes(currentFilter));
 };
