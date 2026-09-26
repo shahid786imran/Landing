@@ -1965,7 +1965,7 @@ const htmlToMarkdown = (html) => {
 
 const renderMarkdown = text => {
   if (!text) return "";
-  let h = esc(text);
+  let h = String(text).replace(/</g, '&lt;').replace(/>/g, '&gt;');
   h = h.replace(/```([\s\S]*?)```/g, (m, c) => `<pre>${c.trim()}</pre>`);
   h = h.replace(/`([^`]+)`/g, (m, c) => `<code>${c}</code>`);
   h = h.replace(/^### (.+)$/gm, (m, t) => `<h3>${t}</h3>`);
