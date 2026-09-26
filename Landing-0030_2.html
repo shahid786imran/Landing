@@ -3971,7 +3971,7 @@ const renderSearch = () => {
       });
     }
   });
-  $("searchResults").innerHTML = r.length ? r.slice(0, 20).map(x => `<div style="padding:10px;border-bottom:1px solid var(--bd);cursor:pointer" onclick="searchGoto(${x.cid},${x.iid})"><div style="font-weight:700;font-size:13px">${esc(x.t)}</div><div style="font-size:11px;color:var(--mt)">${esc(x.s || '')}</div></div>`).join('') : 'No results';
+  $("searchResults").innerHTML = r.length ? r.slice(0, 20).map(x => `<div style="padding:10px;border-bottom:1px solid var(--bd);cursor:pointer" onclick="searchGoto(${x.cid},${x.iid})"><div style="font-weight:700;font-size:13px">${escLite(x.t)}</div><div style="font-size:11px;color:var(--mt)">${esc(x.s || '')}</div></div>`).join('') : 'No results';
 };
 
 /* ==================== SETTINGS / SCHEME ==================== */
