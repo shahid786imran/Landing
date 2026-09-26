@@ -3507,12 +3507,12 @@ const renderCard = (c, idx, list) => {
         <div class="hcard" ${headerStyle} onclick="if(!event.target.closest('.ac,.chk'))window.open('${esc(safeUrl(c.url))}','_blank','noopener')">
           <span class="chk ${editAll ? 'on' : ''}" onclick="event.stopPropagation();toggleCardSelect(${c.id})">✓</span>
           <div class="ic">${renderIcon(c.icon)}</div>
-          <div class="if">
+   <div class="if">
             <div class="t">${esc(c.title)}</div>
             ${c.subtitle ? `<div class="url-preview">${esc(c.subtitle)}</div>` : ''}
             ${c.tags && c.tags.length ? `<div class="item-tags">${c.tags.slice(0,1).map(t => { const m = getTagMeta(t); return `<span class="item-tag">${m.icon} ${esc(m.label)}</span>`; }).join('')}${c.tags.length > 1 ? `<span class="item-tag">+${c.tags.length - 1}</span>` : ''}</div>` : ''}
           </div>
-          <div class="hh-right">             <div class="ac ${editAll ? 'on' : ''}">
+          <div class="hh-right">           <div class="ac ${editAll ? 'on' : ''}">
             <button class="ud" onclick="event.stopPropagation();moveCard(${c.id},-1)" ${first ? 'style="display:none"' : ''}>▲</button>
             <button class="ud" onclick="event.stopPropagation();moveCard(${c.id},1)" ${last ? 'style="display:none"' : ''}>▼</button>
             <button onclick="event.stopPropagation();togglePin(${c.id})">${c.pinned ? '📌' : '📍'}</button>
@@ -3593,13 +3593,13 @@ const renderCard = (c, idx, list) => {
       <div class="hh ${hb}" ${headerBorderStyle} ontouchstart="startCardLongPress(event,${c.id})" ontouchend="cancelCardLongPress()" ontouchcancel="cancelCardLongPress()">
         <span class="chk ${editAll ? 'on' : ''}" onclick="event.stopPropagation();toggleCardSelect(${c.id})">✓</span>
         <span class="em">${renderIcon(c.icon)}</span>
-        <span class="nm">${esc(c.name)}</span>
+<span class="nm">${esc(c.name)}</span>
+        <div class="hh-right">
         ${pinBadge}
         ${pinBottomBadge}
         <span class="ct ${cntColors}">${c.items.length}</span>
         ${tagLabel}
         ${statsInline}
-        </div><div class="hh-right">
         <button class="${addCls}" onclick="addItem(${c.id})">➕</button>
         <button class="ud ${editAll ? 'on' : ''}" onclick="moveCard(${c.id},-1)" ${first ? 'style="display:none"' : ''}>▲</button>
         <button class="ud ${editAll ? 'on' : ''}" onclick="moveCard(${c.id},1)" ${last ? 'style="display:none"' : ''}>▼</button>
