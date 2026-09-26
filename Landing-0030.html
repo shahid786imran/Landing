@@ -3678,38 +3678,89 @@ window.filterByHealth = h => { doHomeAction(); currentFolder = 'smart-' + h; cur
 
 /* ==================== SWIPE (ITEM) ==================== */
 let sw = { active: false };
+
 const onTS = (e, cid, iid) => {
   if (e.target.closest("a,button,.chk")) return;
-  sw = { id: iid, cid, x0: e.touches[0].clientX, y0: e.touches[0].clientY, el: e.currentTarget, inner: e.currentTarget.querySelector(".inner"), dx: 0, dy: 0, active: true, moved: false };
+  sw = { 
+    id: iid, 
+    cid, 
+    x0: e.touches[0].clientX, 
+    y0: e.touches[0].clientY, 
+    el: e.currentTarget, 
+    inner: e.currentTarget.querySelector(".inner"), 
+    dx: 0, 
+    dy: 0, 
+    active: true, 
+    moved: false,
+    directionLocked: null   // ✅ NAYA — direction lock
+  };
   clearTimeout(itemLongPressTimer);
   itemLongPressFired = false;
   itemLongPressTimer = setTimeout(() => {
-    itemLongPressTimer = null; itemLongPressFired = true; haptic(30);
+    itemLongPressTimer = null; 
+    itemLongPressFired = true; 
+    haptic(30);
     if (sw.inner) sw.inner.style.transform = "";
     const bg = sw.el ? sw.el.querySelector(".swipe-bg") : null;
     if (bg) bg.style.opacity = 0;
     openItemContext(cid, iid);
   }, 500);
 };
+
 const onTM = e => {
   if (!sw.active) return;
   const dx = e.touches[0].clientX - sw.x0;
   const dy = e.touches[0].clientY - sw.y0;
   sw.dx = dx;
+  sw.dy = dy;
+  
   if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
     if (itemLongPressTimer) { clearTimeout(itemLongPressTimer); itemLongPressTimer = null; }
     sw.moved = true;
   }
   if (itemLongPressFired) return;
+  
+  // ✅ NAYA: Direction lock — scroll vs swipe decide karein
+  if (!sw.directionLocked) {
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+      // Vertical scroll detect hua — swipe cancel
+      sw.directionLocked = 'vertical';
+      sw.active = false;
+      if (sw.inner) sw.inner.style.transform = '';
+      const bg = sw.el.querySelector(".swipe-bg");
+      if (bg) bg.style.opacity = 0;
+      return;
+    } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+      // Horizontal swipe — lock
+      sw.directionLocked = 'horizontal';
+    } else {
+      return; // Abhi decide nahi hua
+    }
+  }
+  
+  // Sirf horizontal lock par translate
+  if (sw.directionLocked !== 'horizontal') return;
+  
   const c = Math.max(-90, Math.min(90, dx));
   if (sw.inner) sw.inner.style.transform = `translateX(${c}px)`;
   const bg = sw.el.querySelector(".swipe-bg");
   if (bg) bg.style.opacity = Math.min(1, Math.abs(c) / 60);
 };
+
 const onTE = () => {
   if (itemLongPressTimer) { clearTimeout(itemLongPressTimer); itemLongPressTimer = null; }
   if (itemLongPressFired) { itemLongPressFired = false; sw.active = false; return; }
   if (!sw.active) return;
+  
+  // ✅ NAYA: Agar vertical lock tha to kuch nahi karein
+  if (sw.directionLocked === 'vertical') {
+    if (sw.inner) sw.inner.style.transform = "";
+    const bg = sw.el ? sw.el.querySelector(".swipe-bg") : null;
+    if (bg) bg.style.opacity = 0;
+    sw.active = false;
+    return;
+  }
+  
   const dx = sw.dx;
   if (sw.inner) sw.inner.style.transform = "";
   if (sw.el) sw.el.classList.remove("swiping");
@@ -3717,13 +3768,13 @@ const onTE = () => {
   if (bg) bg.style.opacity = 0;
   sw.active = false;
   if (Math.abs(dx) < 60) return;
+  
   const c = cards.find(x => x.id === sw.cid);
   const it = c ? c.items.find(x => x.id === sw.id) : null;
   if (it && it.locked) { toast("Item is locked"); return; }
   if (dx < 0) askArchiveItem(sw.cid, sw.id);
   else editItem(sw.cid, sw.id);
 };
-
 /* ==================== LONG PRESS (CARD) ==================== */
 let cardLongPressTimer = null;
 let cardLongPressFired = false;
