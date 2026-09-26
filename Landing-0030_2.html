@@ -704,6 +704,55 @@ body.edit-mode .hh .ad.only-edit {
   display: flex;
 }
 
+.hh-right .ud,
+.hh-right .arc {
+  display: none;
+}
+body.edit-mode .hh-right .ud,
+body.edit-mode .hh-right .arc {
+  display: flex;
+}
+.hh-right .arc.pin-active,
+.hh-right .arc.pin-bottom-active {
+  display: flex;
+}
+.hh-right .ad {
+  display: inline-flex;
+}
+.hh-right .ad.only-edit {
+  display: none;
+}
+body.edit-mode .hh-right .ad.only-edit {
+  display: inline-flex;
+}
+/* Normal mode: buttons chhupe rahein */
+.hh-right .ud,
+.hh-right .arc {
+  display: none;
+}
+
+/* Edit mode: buttons dikhein */
+body.edit-mode .hh-right .ud,
+body.edit-mode .hh-right .arc {
+  display: flex;
+}
+
+/* Pin active: hamesha dikhe */
+.hh-right .arc.pin-active,
+.hh-right .arc.pin-bottom-active {
+  display: flex;
+}
+
+/* Add button: note cards mein hamesha, link mein sirf edit */
+.hh-right .ad {
+  display: inline-flex;
+}
+.hh-right .ad.only-edit {
+  display: none;
+}
+body.edit-mode .hh-right .ad.only-edit {
+  display: inline-flex;
+}
 /* ==================== EMOJI GRID ==================== */
 .emoji-grid{
   display:grid;grid-template-columns:repeat(6,1fr);gap:5px;
