@@ -216,18 +216,19 @@ body.hide-counts .hh .ct{display:none}
 .hh .arc.pin-bottom-btn{background:linear-gradient(135deg,#0ea5e9,#0369a1)}
 .hh .arc.pin-active{display:flex;background:linear-gradient(135deg,#f59e0b,#d97706)}
 .hh .arc.pin-bottom-active{display:flex;background:linear-gradient(135deg,#0ea5e9,#0369a1)}
-.hh .chk{
-  display:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--bd);
+.hcard .chk{
+  display:none !important;width:22px;height:22px;border-radius:50%;border:2px solid var(--bd);
   align-items:center;justify-content:center;flex:none;font-size:12px;
-  color:transparent;cursor:pointer;transition:.2s;order:0;
+  color:transparent;cursor:pointer;
+  margin: 0 !important;
 }
-.hh .chk.on{display:flex}
-.card.selected .hh .chk{background:var(--p);border-color:var(--p);color:#fff}
-
+.hcard .chk.on{display:none !important}
+.card.selected .hcard .chk{display:none !important}
 /* ==================== HEADER CARD (.hcard) ==================== */
 .hcard{
-  display:flex;align-items:center;gap:12px;
+  display:flex;align-items:center;gap:6px;
   padding:calc(14px * var(--pad)) calc(15px * var(--pad));
+  padding-left: 0px;
   cursor:pointer;
   background:var(--hh-custom-bg);
   border-bottom:1px solid var(--hh-custom-bd);
@@ -236,12 +237,15 @@ body.hide-counts .hh .ct{display:none}
 .hcard .ic{
   width:28px!important;height:28px!important;min-width:28px!important;flex:none;
   display:flex;align-items:center;justify-content:center;font-size:22px!important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 .hcard .if{flex:1;min-width:0;overflow:hidden}
 .hcard .t{
   font-size:13.5px;font-weight:700;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   display:block;color:var(--tx);
+  margin-left: 0 !important;
 }
 .hcard .url-preview{
   font-size:10.5px;color:var(--mt);
@@ -3513,7 +3517,8 @@ const renderCard = (c, idx, list) => {
             ${c.subtitle ? `<div class="url-preview">${esc(c.subtitle)}</div>` : ''}
             ${c.tags && c.tags.length ? `<div class="item-tags">${c.tags.slice(0,1).map(t => { const m = getTagMeta(t); return `<span class="item-tag">${m.icon} ${esc(m.label)}</span>`; }).join('')}${c.tags.length > 1 ? `<span class="item-tag">+${c.tags.length - 1}</span>` : ''}</div>` : ''}
           </div>
-          <div class="hh-right">           <div class="ac ${editAll ? 'on' : ''}">
+          <div class="hh-right">
+          <div class="ac ${editAll ? 'on' : ''}">
             <button class="ud" onclick="event.stopPropagation();moveCard(${c.id},-1)" ${first ? 'style="display:none"' : ''}>▲</button>
             <button class="ud" onclick="event.stopPropagation();moveCard(${c.id},1)" ${last ? 'style="display:none"' : ''}>▼</button>
             <button onclick="event.stopPropagation();togglePin(${c.id})">${c.pinned ? '📌' : '📍'}</button>
