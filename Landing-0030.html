@@ -3496,7 +3496,7 @@ const renderCard = (c, idx, list) => {
     s += `📊 ${c.items.length}`;
     if (pc > 0) s += ` 🔒 ${pc}`;
     s += ` 🕐 ${fmtTime(c.updated)}`;
-    return `<span style="font-size:10px;color:var(--mt);font-weight:600;margin-left:6px">${s}</span>`;
+    return `<span class="stats-inline">${s}</span>`;
   })() : '';
   const lockIcon = c.locked ? '<span class="lock-icon on">🔒</span>' : '';
   const hideIcon = c.hidden ? '<span class="hide-icon on">👁️‍🗨️</span>' : '';
