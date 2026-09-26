@@ -1903,7 +1903,7 @@ body.night .folder-header .fh-count{color:#94a3b8}
 /* ==================== UTILITIES ==================== */
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
+const escLite = s => String(s ?? "").replace(/[<>]/g, c => ({ '<': '&lt;', '>': '&gt;' }[c]));
 /* Safe URL — sirf http/https allow (XSS fix #44) */
 const safeUrl = u => {
   if (!u) return "";
