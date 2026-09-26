@@ -123,8 +123,22 @@ button:active{transform:scale(.93)}
   position:relative;overflow:hidden;cursor:pointer;user-select:none;
 }
 body.edit-mode .hh{
-  flex-wrap:wrap;
+  flex-wrap:nowrap;
   row-gap:6px;
+}
+body.edit-mode .hh .hh-right{
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  max-width:70%;
+  justify-content:flex-end;
+}
+body.edit-mode .hh .hh-right::-webkit-scrollbar{
+  display:none;
+}
+body.edit-mode .hh .nm{
+  max-width:30%;
 }
 .hh.hide{border-bottom-color:transparent}
 .hh .em{
