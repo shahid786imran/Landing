@@ -2370,6 +2370,7 @@ const checkSnoozed = () => {
 };
 setInterval(checkSnoozed, 10000);
 </script>
+<script>
 /* ==================== FOLDER GROUP RENDERING (Feature #1) ==================== */
 const renderFolderGroup = (folder, cardList) => {
   const f = folder.id === 'ungrouped' ? folder : folders.find(x => x.id === folder.id);
@@ -3191,6 +3192,7 @@ window.applyExpiry = remove => {
   c.updated = Date.now(); save(); render(); checkExpiredItems(); ctxClose();
 };
 </script>
+<script>
 /* ==================== EDIT CARD (with Feature #1 Folders toggle) ==================== */
 const editCard = id => {
   const c = cards.find(x => x.id === id);
