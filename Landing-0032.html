@@ -3190,7 +3190,7 @@ window.applyExpiry = remove => {
   else { const inp = $("pcExpiryInput"); if (!inp) return; it.expiry = inp.value || null; toast(it.expiry ? "⏰ Expiry set" : "Removed"); }
   c.updated = Date.now(); save(); render(); checkExpiredItems(); ctxClose();
 };
-<script>
+</script>
 /* ==================== EDIT CARD (with Feature #1 Folders toggle) ==================== */
 const editCard = id => {
   const c = cards.find(x => x.id === id);
