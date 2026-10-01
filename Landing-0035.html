@@ -2187,12 +2187,30 @@ const emptyAreaStart = e => {
 };
 const emptyAreaMove = e => {
   if (!settings.emptyAreaGestures) return;
-  if (emptyAreaState.pinchActive && e.touches && e.touches.length >= 2) { const t1 = e.touches[0], t2 = e.touches[1]; const dx = t2.clientX - t1.clientX, dy = t2.clientY - t1.clientY; const dist = Math.sqrt(dx*dx + dy*dy); const ratio = dist / (emptyAreaState.pinchStartDist || dist); let newCompact = Math.round(emptyAreaState.startCompact * ratio); newCompact = Math.max(30, Math.min(250, newCompact)); document.documentElement.style.setProperty('--pad', (newCompact/100).toFixed(2)); document.documentElement.style.setProperty('--rowpad', (newCompact/100).toFixed(2)); const el = $('cpVal'); if (el) el.textContent = (newCompact/100).toFixed(1) + 'x'; emptyAreaState._pinchVal = newCompact; return; }
+  if (emptyAreaState.pinchActive && e.touches && e.touches.length >= 2) {
+    const t1 = e.touches[0], t2 = e.touches[1];
+    const dx = t2.clientX - t1.clientX, dy = t2.clientY - t1.clientY;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const ratio = dist / (emptyAreaState.pinchStartDist || dist);
+    let newCompact = Math.round(emptyAreaState.startCompact * ratio);
+    newCompact = Math.max(30, Math.min(250, newCompact));
+    document.documentElement.style.setProperty('--pad', (newCompact/100).toFixed(2));
+    document.documentElement.style.setProperty('--rowpad', (newCompact/100).toFixed(2));
+    const el = $('cpVal'); if (el) el.textContent = (newCompact/100).toFixed(1) + 'x';
+    emptyAreaState._pinchVal = newCompact;
+    return;
+  }
   if (!emptyAreaState.active) return;
   const t = e.touches ? e.touches[0] : e;
   const dx = t.clientX - emptyAreaState.x0, dy = t.clientY - emptyAreaState.y0;
   emptyAreaState.dx = dx; emptyAreaState.dy = dy;
-  if (Math.abs(dx) > 20 || Math.abs(dy) > 20) { emptyAreaState.moved = true; if (emptyAreaState.longPressTimer) { clearTimeout(emptyAreaState.longPressTimer); emptyAreaState.longPressTimer = null; } }
+  if (Math.abs(dx) > 25 || Math.abs(dy) > 25) {
+    emptyAreaState.moved = true;
+    if (emptyAreaState.longPressTimer) {
+      clearTimeout(emptyAreaState.longPressTimer);
+      emptyAreaState.longPressTimer = null;
+    }
+  }
 };
 const emptyAreaEnd = e => {
   if (!settings.emptyAreaGestures) return;
@@ -2207,7 +2225,7 @@ const emptyAreaEnd = e => {
     if (absX > absY) { if (dx > 0) { openLeftPanel(); } else { openRightPanel(); } return; }
     else { if (dy < 0) { openSheet(); } else { if (window.syncFromFirebase) { toast("🔄 Syncing..."); window.syncFromFirebase().then(ok => toast(ok ? "☁️ Synced" : "⚠️ Failed")).catch(() => toast("⚠️ Failed")); } else { toast("⚠️ Sync unavailable"); } } return; }
   }
-  if (!emptyAreaState.moved && dur < 500) {
+  if (Math.abs(emptyAreaState.dx) < 20 && Math.abs(emptyAreaState.dy) < 20 && dur < 600) {
     emptyAreaState.tapCount++;
     if (emptyAreaState.tapTimer) clearTimeout(emptyAreaState.tapTimer);
     if (emptyAreaState.tapCount === 1) {
