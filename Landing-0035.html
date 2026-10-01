@@ -2192,7 +2192,7 @@ const emptyAreaMove = e => {
   const t = e.touches ? e.touches[0] : e;
   const dx = t.clientX - emptyAreaState.x0, dy = t.clientY - emptyAreaState.y0;
   emptyAreaState.dx = dx; emptyAreaState.dy = dy;
-  if (Math.abs(dx) > 10 || Math.abs(dy) > 10) { emptyAreaState.moved = true; if (emptyAreaState.longPressTimer) { clearTimeout(emptyAreaState.longPressTimer); emptyAreaState.longPressTimer = null; } }
+  if (Math.abs(dx) > 20 || Math.abs(dy) > 20) { emptyAreaState.moved = true; if (emptyAreaState.longPressTimer) { clearTimeout(emptyAreaState.longPressTimer); emptyAreaState.longPressTimer = null; } }
 };
 const emptyAreaEnd = e => {
   if (!settings.emptyAreaGestures) return;
