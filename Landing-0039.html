@@ -2781,5 +2781,75 @@ window.saveToFirebase = async d => { if (!window.firebaseUser) return; try { las
 window.syncFromFirebase = async () => { if (!window.firebaseUser) return false; try { const s = await getDoc(doc(db, "notes", window.firebaseUser.uid)); if (s.exists()) { window.loadFromFirebase(s.data()); return true; } } catch (e) {} return false; };
 setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls && !ls.classList.contains("hide")) { console.warn("Timeout"); hideLoadingScreen(); } }, 8000);
 </script>
+<!-- ===== FIX: GLOBAL PAGE SWIPE TO OPEN SIDE PANELS ===== -->
+<script>
+(function () {
+  function init() {
+    if (typeof window.openLeftPanel !== 'function' || typeof window.openRightPanel !== 'function') {
+      setTimeout(init, 300); return;
+    }
+
+    var pageSwipe = { active: false, x0: 0, y0: 0, dx: 0, dy: 0 };
+
+    function hasOpenModal() {
+      return document.querySelector('.ov.on, .sheet-ov.on, .ctx-ov.on') !== null;
+    }
+    function isBlockedTarget(e) {
+      var t = e.target;
+      if (!t) return true;
+      if (t.closest('button, .chk, input, textarea, select, a, .switch, .slider')) return true;
+      if (t.closest('.sheet-ov.on, .ov.on, .ctx-ov.on, .side-panel, .panel-fab, .multiselect-bar.on, .bin-bar.on')) return true;
+      return false;
+    }
+
+    document.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1) { pageSwipe.active = false; return; }
+      if (hasOpenModal()) { pageSwipe.active = false; return; }
+      if (typeof leftPanelOpen !== 'undefined' && leftPanelOpen) { pageSwipe.active = false; return; }
+      if (typeof rightPanelOpen !== 'undefined' && rightPanelOpen) { pageSwipe.active = false; return; }
+      if (typeof multiSelect !== 'undefined' && multiSelect.active) { pageSwipe.active = false; return; }
+      if (typeof editAll !== 'undefined' && editAll) { pageSwipe.active = false; return; }
+      if (typeof settings !== 'undefined' && !settings.emptyAreaGestures) { pageSwipe.active = false; return; }
+      if (isBlockedTarget(e)) { pageSwipe.active = false; return; }
+      if (typeof itemLongPressFired !== 'undefined' && itemLongPressFired) { pageSwipe.active = false; return; }
+      if (typeof cardLongPressFired !== 'undefined' && cardLongPressFired) { pageSwipe.active = false; return; }
+      var t = e.touches[0];
+      pageSwipe = { active: true, x0: t.clientX, y0: t.clientY, dx: 0, dy: 0 };
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function (e) {
+      if (!pageSwipe.active) return;
+      if (e.touches.length !== 1) { pageSwipe.active = false; return; }
+      var t = e.touches[0];
+      pageSwipe.dx = t.clientX - pageSwipe.x0;
+      pageSwipe.dy = t.clientY - pageSwipe.y0;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function () {
+      if (!pageSwipe.active) return;
+      var dx = pageSwipe.dx, dy = pageSwipe.dy;
+      pageSwipe.active = false;
+      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 0) window.openLeftPanel();
+        else window.openRightPanel();
+        if (typeof haptic === 'function') haptic(15);
+        return;
+      }
+      if (Math.abs(dy) > 70 && Math.abs(dy) > Math.abs(dx)) {
+        if (typeof handleGestureAction === 'function' && typeof settings !== 'undefined') {
+          if (dy < 0) handleGestureAction(settings.swipeUp);
+          else handleGestureAction(settings.swipeDown);
+          if (typeof haptic === 'function') haptic(15);
+        }
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchcancel', function () { pageSwipe.active = false; }, { passive: true });
+
+    console.log('✅ Global page swipe enabled');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
