@@ -3978,5 +3978,268 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== FIX 4: HOME GAP + QL TOOLTIP + QL TITLE ONLY + DATA REMOVE ===== -->
+<script>
+(function () {
+  function init() {
+    if (!document.body || typeof cards === 'undefined') {
+      setTimeout(init, 300); return;
+    }
+
+    /* ===== FIX 1: HOME PAGE SECTIONS GAP CONSISTENT ===== */
+    (function () {
+      var style = document.createElement('style');
+      style.id = 'nm-home-gap-fix';
+      style.textContent = `
+        /* Sab outer sections ka margin same */
+        #cards > .standalone-headers,
+        #cards > .folder-group {
+          margin: 0 0 calc(14px * var(--pad)) 0 !important;
+          padding: 0 !important;
+        }
+        /* Sabse last section ka extra margin hata do */
+        #cards > .standalone-headers:last-child,
+        #cards > .folder-group:last-child {
+          margin-bottom: 0 !important;
+        }
+        /* Andar ke cards ka margin 0 karo taaki outer margin hi control kare */
+        #cards .standalone-headers .card,
+        #cards .folder-group .card {
+          margin-bottom: 0 !important;
+        }
+        #cards .folder-group .card + .card {
+          margin-top: calc(10px * var(--pad)) !important;
+        }
+        #cards .standalone-headers .card + .card {
+          margin-top: calc(10px * var(--pad)) !important;
+        }
+        /* Grid view mein gap chhota */
+        body.grid-view #cards > .standalone-headers,
+        body.grid-view #cards > .folder-group {
+          margin-bottom: calc(10px * var(--pad)) !important;
+        }
+      `;
+      document.head.appendChild(style);
+    })();
+
+    /* ===== FIX 2: QUICK LINKS LONG PRESS → CHHOTA TOOLTIP ===== */
+    (function () {
+      // Tooltip styles
+      var style = document.createElement('style');
+      style.id = 'nm-ql-tooltip-style';
+      style.textContent = `
+        #nmQlTooltip {
+          position: fixed;
+          z-index: 99999;
+          background: var(--s);
+          border: 1px solid var(--bd);
+          border-radius: 10px;
+          box-shadow: 0 8px 24px rgba(0,0,0,.25);
+          padding: 6px;
+          min-width: 160px;
+          display: none;
+          font-family: var(--font-panel-items, inherit);
+          animation: nmQlFadeIn .15s ease-out;
+        }
+        #nmQlTooltip.on { display: block; }
+        #nmQlTooltip button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+          padding: 8px 10px;
+          border-radius: 8px;
+          background: transparent;
+          border: 0;
+          color: var(--tx);
+          font-size: 12.5px;
+          font-weight: 700;
+          text-align: left;
+          cursor: pointer;
+          font-family: inherit;
+        }
+        #nmQlTooltip button:hover { background: rgba(99,102,241,.1); }
+        #nmQlTooltip button .tt-ic {
+          width: 24px; height: 24px;
+          display: flex; align-items: center; justify-content: center;
+          border-radius: 6px; color: #fff; font-size: 12px; flex: none;
+        }
+        #nmQlTooltip button .tt-txt { flex: 1; }
+        #nmQlTooltip button .tt-sub { font-size: 9.5px; color: var(--mt); font-weight: 500; margin-top: 1px; }
+        #nmQlTooltip .tt-sep { height: 1px; background: var(--bd); margin: 4px 6px; border-radius: 1px; }
+        @keyframes nmQlFadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Global tooltip element
+      var tooltip = document.createElement('div');
+      tooltip.id = 'nmQlTooltip';
+      document.body.appendChild(tooltip);
+
+      var tooltipIdx = -1;
+
+      function closeTooltip() {
+        tooltip.classList.remove('on');
+        tooltipIdx = -1;
+      }
+      window.__closeQlTooltip = closeTooltip;
+
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('#nmQlTooltip')) closeTooltip();
+      }, true);
+      document.addEventListener('scroll', closeTooltip, true);
+
+      window.openQuickLinksTooltip = function (idx, anchorEl) {
+        var q = window.quickLinks[idx];
+        if (!q) return;
+        tooltipIdx = idx;
+        var h = '';
+        h += '<button data-tt="open"><span class="tt-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">🔗</span><span class="tt-txt">Open Link</span></button>';
+        h += '<button data-tt="up" ' + (idx === 0 ? 'style="opacity:.4;pointer-events:none"' : '') + '><span class="tt-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">▲</span><span class="tt-txt">Move Up</span></button>';
+        h += '<button data-tt="down" ' + (idx === window.quickLinks.length - 1 ? 'style="opacity:.4;pointer-events:none"' : '') + '><span class="tt-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">▼</span><span class="tt-txt">Move Down</span></button>';
+        h += '<div class="tt-sep"></div>';
+        h += '<button data-tt="remove"><span class="tt-ic" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">🗑</span><span class="tt-txt">Remove</span></button>';
+        tooltip.innerHTML = h;
+
+        // Position: anchor ke paas
+        var rect = anchorEl.getBoundingClientRect();
+        var tw = 180, th = 220;
+        var left = rect.left - tw - 8;
+        var top = rect.top;
+        if (left < 8) left = rect.right + 8;
+        if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
+        if (top + th > window.innerHeight - 8) top = window.innerHeight - th - 8;
+        if (top < 8) top = 8;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+        tooltip.style.width = tw + 'px';
+        tooltip.classList.add('on');
+
+        // Button handlers
+        tooltip.querySelectorAll('[data-tt]').forEach(function (btn) {
+          btn.onclick = function (e) {
+            e.stopPropagation();
+            var act = btn.getAttribute('data-tt');
+            var i = tooltipIdx;
+            closeTooltip();
+            if (act === 'open') {
+              var url = q.url;
+              if (!url) {
+                var c = cards.find(function (x) { return x.id === q.cardId; });
+                if (c) { var it = c.items.find(function (x) { return x.id === q.itemId; }); if (it) url = it.url; }
+              }
+              if (url && typeof safeUrl === 'function') window.open(safeUrl(url), '_blank', 'noopener');
+            } else if (act === 'up' && i > 0) {
+              var tmp = window.quickLinks[i]; window.quickLinks[i] = window.quickLinks[i - 1]; window.quickLinks[i - 1] = tmp;
+              try { localStorage.setItem('nm_quickLinks', JSON.stringify(window.quickLinks)); } catch (er) {}
+              if (typeof window.renderQuickLinks === 'function') window.renderQuickLinks();
+            } else if (act === 'down' && i < window.quickLinks.length - 1) {
+              var tmp2 = window.quickLinks[i]; window.quickLinks[i] = window.quickLinks[i + 1]; window.quickLinks[i + 1] = tmp2;
+              try { localStorage.setItem('nm_quickLinks', JSON.stringify(window.quickLinks)); } catch (er) {}
+              if (typeof window.renderQuickLinks === 'function') window.renderQuickLinks();
+            } else if (act === 'remove') {
+              if (typeof window.removeFromQuickLinks === 'function') window.removeFromQuickLinks(q.cardId, q.itemId);
+            }
+          };
+        });
+      };
+
+      // Purane openQuickLinksItemMenu ko override — full screen menu ki jagah tooltip
+      window.openQuickLinksItemMenu = function (idx) {
+        var sec = document.getElementById('nmQuickLinksSec');
+        if (!sec) return;
+        var btn = sec.querySelector('[data-ql-idx="' + idx + '"]');
+        if (!btn) return;
+        window.openQuickLinksTooltip(idx, btn);
+      };
+    })();
+
+    /* ===== FIX 3: QUICK LINKS MEIN SIRF TITLE, LINK TEXT NAHI ===== */
+    (function () {
+      if (typeof window.renderQuickLinks !== 'function') return;
+      var _origRender = window.renderQuickLinks;
+      window.renderQuickLinks = function () {
+        _origRender();
+        setTimeout(function () {
+          var sec = document.getElementById('nmQuickLinksSec');
+          if (!sec) return;
+          sec.querySelectorAll('[data-ql-idx]').forEach(function (btn) {
+            // Card name badge hata do
+            var badge = btn.querySelector('.pi-count');
+            if (badge) badge.remove();
+            // URL / preview text hide karo
+            btn.querySelectorAll('.ql-url, .pi-sub').forEach(function (el) { el.remove(); });
+            // Sirf title rahe
+            var lbl = btn.querySelector('.pi-label');
+            if (lbl) {
+              // Agar title bahut lamba ho to truncate
+              lbl.style.whiteSpace = 'nowrap';
+              lbl.style.overflow = 'hidden';
+              lbl.style.textOverflow = 'ellipsis';
+              lbl.style.maxWidth = '100%';
+            }
+          });
+          // Purane long-press handlers hata do (jo full menu kholte the)
+          sec.querySelectorAll('[data-ql-idx]').forEach(function (btn) {
+            if (btn._qlLongBound2) return;
+            btn._qlLongBound2 = true;
+            var idx = parseInt(btn.getAttribute('data-ql-idx'));
+            var lpTimer = null, lpFired = false;
+            btn.addEventListener('touchstart', function () {
+              lpFired = false;
+              lpTimer = setTimeout(function () {
+                lpTimer = null; lpFired = true;
+                if (typeof haptic === 'function') haptic(30);
+                if (window.openQuickLinksTooltip) window.openQuickLinksTooltip(idx, btn);
+              }, 600);
+            }, { passive: true });
+            btn.addEventListener('touchend', function () {
+              if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+              if (lpFired) { setTimeout(function () { lpFired = false; }, 100); }
+            }, { passive: true });
+            btn.addEventListener('touchmove', function () {
+              if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+            }, { passive: true });
+            btn.addEventListener('contextmenu', function (e) {
+              e.preventDefault();
+              if (window.openQuickLinksTooltip) window.openQuickLinksTooltip(idx, btn);
+            });
+          });
+        }, 30);
+      };
+    })();
+
+    /* ===== FIX 4: RIGHT PANEL SE DATA SECTION BHI REMOVE ===== */
+    (function () {
+      function removeDataSection() {
+        var rp = document.getElementById('rightPanel');
+        if (!rp) return;
+        var body = rp.querySelector('.panel-body');
+        if (!body) return;
+        var toRemove = ['Create', 'Manage', 'Appearance', 'Cloud', 'Data'];
+        body.querySelectorAll('.panel-group').forEach(function (grp) {
+          var title = grp.querySelector('.panel-group-title');
+          if (!title) return;
+          var txt = (title.textContent || '').trim();
+          for (var i = 0; i < toRemove.length; i++) {
+            if (txt.indexOf(toRemove[i]) >= 0) {
+              grp.remove();
+              return;
+            }
+          }
+        });
+      }
+      removeDataSection();
+      setInterval(removeDataSection, 1000);
+    })();
+
+    console.log('✅ FIX 4: Home gap + QL tooltip + QL title only + Data remove');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
