@@ -5361,5 +5361,94 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== PATCH: CARD BORDER 1PX ALL SIDES ===== -->
+<style id="nm-card-border-all-sides-style">
+  /* Card-in ka border chaaron taraf 1px solid ho */
+  #cards .card .card-in,
+  body .card .card-in {
+    border: 1px solid var(--card-bd) !important;
+    border-left-width: 1px !important;
+    border-right-width: 1px !important;
+    border-top-width: 1px !important;
+    border-bottom-width: 1px !important;
+  }
+
+  /* Agar card ka custom color set ho to chaaron taraf woh color */
+  #cards .card.custom-border-color .card-in,
+  body .card.custom-border-color .card-in {
+    border-color: var(--nm-card-custom-color, var(--card-bd)) !important;
+  }
+
+  /* Header card ka bhi 1px chaaron taraf */
+  #cards .card.header-card .card-in,
+  body .card.header-card .card-in {
+    border: 1px solid var(--card-bd) !important;
+  }
+  #cards .card.header-card.custom-border .card-in,
+  body .card.header-card.custom-border .card-in {
+    border-color: var(--header-border-color, var(--card-bd)) !important;
+    border-width: 1px !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body || typeof window.render !== 'function') {
+      setTimeout(init, 300); return;
+    }
+
+    // render ko wrap karo — har render ke baad custom color set karo
+    var _origRender = window.render;
+    window.render = function () {
+      _origRender();
+      setTimeout(function () {
+        document.querySelectorAll('#cards .card').forEach(function (cardEl) {
+          var cid = cardEl.getAttribute('data-cid');
+          if (!cid) return;
+          var c = (typeof cards !== 'undefined') ? cards.find(function (x) { return x.id === parseInt(cid); }) : null;
+          if (!c) return;
+          var cardIn = cardEl.querySelector('.card-in');
+          if (!cardIn) return;
+
+          // Custom color ho to chaaron taraf lagao
+          if (c.color && typeof getColorHex === 'function') {
+            var hex = getColorHex(c.color);
+            if (hex && hex !== 'transparent') {
+              cardIn.style.borderColor = hex;
+              cardIn.style.borderWidth = '1px';
+              cardIn.style.borderStyle = 'solid';
+              // Inline border-left-color override hata do
+              cardIn.style.borderLeftColor = hex;
+              cardIn.style.borderRightColor = hex;
+              cardIn.style.borderTopColor = hex;
+              cardIn.style.borderBottomColor = hex;
+            } else {
+              cardIn.style.borderLeftColor = '';
+              cardIn.style.borderRightColor = '';
+              cardIn.style.borderTopColor = '';
+              cardIn.style.borderBottomColor = '';
+            }
+          } else {
+            // Koi custom color nahi — default
+            cardIn.style.borderLeftColor = '';
+            cardIn.style.borderRightColor = '';
+            cardIn.style.borderTopColor = '';
+            cardIn.style.borderBottomColor = '';
+          }
+        });
+      }, 30);
+    };
+
+    // Pehli baar bhi apply karo
+    setTimeout(function () {
+      if (typeof window.render === 'function') window.render();
+    }, 500);
+
+    console.log('✅ PATCH: Card border 1px all sides');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
