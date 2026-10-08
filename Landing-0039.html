@@ -4241,5 +4241,354 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== PATCH: SIDE BARS HEADER TITLE REMOVE ===== -->
+<style id="nm-hide-panel-title-style">
+  .side-panel .panel-header .ph-title {
+    display: none !important;
+  }
+  /* Icon aur close button ko space do */
+  .side-panel .panel-header {
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+  .side-panel .panel-header .ph-icon {
+    margin-right: auto !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+
+    // Dono panels ke header se title hata do (HTML se bhi)
+    ['leftPanel', 'rightPanel'].forEach(function (pid) {
+      var panel = document.getElementById(pid);
+      if (!panel) return;
+      var title = panel.querySelector('.panel-header .ph-title');
+      if (title && !title._nmHidden) {
+        title.style.display = 'none';
+        title._nmHidden = true;
+      }
+    });
+
+    console.log('✅ PATCH: Side bars header title removed');
+  }
+  init();
+})();
+</script>
+<!-- ===== PENDING PATCHES: 6 Changes ===== -->
+<style id="nm-pending-fixes-css">
+  /* ===== FIX 2: QUICK LINKS SIRF TITLE ===== */
+  #nmQuickLinksSec .panel-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    overflow: hidden !important;
+    min-width: 0 !important;
+  }
+  #nmQuickLinksSec .panel-item .pi-icon {
+    flex: 0 0 20px !important;
+    font-size: 14px !important;
+  }
+  #nmQuickLinksSec .panel-item .pi-label {
+    flex: 1 !important;
+    min-width: 0 !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  #nmQuickLinksSec .panel-item .pi-count,
+  #nmQuickLinksSec .panel-item .ql-url,
+  #nmQuickLinksSec .panel-item .pi-sub {
+    display: none !important;
+  }
+
+  /* ===== FIX 1: QUICK LINKS TOOLTIP ===== */
+  #nmQlTooltip {
+    position: fixed;
+    z-index: 99999;
+    background: var(--s);
+    border: 1px solid var(--bd);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    padding: 6px;
+    min-width: 150px;
+    display: none;
+    font-family: var(--font-panel-items, inherit);
+    animation: nmQlFadeIn .15s ease-out;
+  }
+  #nmQlTooltip.on { display: block; }
+  #nmQlTooltip button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: transparent;
+    border: 0;
+    color: var(--tx);
+    font-size: 12.5px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  #nmQlTooltip button:hover { background: rgba(99,102,241,.1); }
+  #nmQlTooltip button .tt-ic {
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; color: #fff; font-size: 12px; flex: none;
+  }
+  #nmQlTooltip button .tt-txt { flex: 1; }
+  #nmQlTooltip .tt-sep { height: 1px; background: var(--bd); margin: 4px 6px; border-radius: 1px; }
+  @keyframes nmQlFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body || typeof cards === 'undefined') {
+      setTimeout(init, 300); return;
+    }
+
+    /* ===== FIX 1 + 2: QUICK LINKS TOOLTIP + SIRF TITLE ===== */
+    (function () {
+      var tooltip = document.getElementById('nmQlTooltip');
+      if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.id = 'nmQlTooltip';
+        document.body.appendChild(tooltip);
+      }
+      var tooltipIdx = -1;
+
+      function closeTooltip() {
+        tooltip.classList.remove('on');
+        tooltipIdx = -1;
+      }
+      window.__closeQlTooltip = closeTooltip;
+
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('#nmQlTooltip')) closeTooltip();
+      }, true);
+      document.addEventListener('scroll', closeTooltip, true);
+
+      window.openQuickLinksTooltip = function (idx, anchorEl) {
+        var q = window.quickLinks ? window.quickLinks[idx] : null;
+        if (!q) return;
+        tooltipIdx = idx;
+        var h = '';
+        h += '<button data-tt="open"><span class="tt-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">🔗</span><span class="tt-txt">Open Link</span></button>';
+        h += '<button data-tt="up" ' + (idx === 0 ? 'style="opacity:.4;pointer-events:none"' : '') + '><span class="tt-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">▲</span><span class="tt-txt">Move Up</span></button>';
+        h += '<button data-tt="down" ' + (idx === window.quickLinks.length - 1 ? 'style="opacity:.4;pointer-events:none"' : '') + '><span class="tt-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">▼</span><span class="tt-txt">Move Down</span></button>';
+        h += '<div class="tt-sep"></div>';
+        h += '<button data-tt="remove"><span class="tt-ic" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">🗑</span><span class="tt-txt">Remove</span></button>';
+        tooltip.innerHTML = h;
+
+        var rect = anchorEl.getBoundingClientRect();
+        var tw = 170, th = 200;
+        var left = rect.left - tw - 8;
+        var top = rect.top;
+        if (left < 8) left = rect.right + 8;
+        if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
+        if (top + th > window.innerHeight - 8) top = window.innerHeight - th - 8;
+        if (top < 8) top = 8;
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+        tooltip.style.width = tw + 'px';
+        tooltip.classList.add('on');
+
+        tooltip.querySelectorAll('[data-tt]').forEach(function (btn) {
+          btn.onclick = function (e) {
+            e.stopPropagation();
+            var act = btn.getAttribute('data-tt');
+            var i = tooltipIdx;
+            var qi = window.quickLinks ? window.quickLinks[i] : null;
+            closeTooltip();
+            if (!qi) return;
+            if (act === 'open') {
+              var url = qi.url;
+              if (!url) {
+                var c = cards.find(function (x) { return x.id === qi.cardId; });
+                if (c) { var it = c.items.find(function (x) { return x.id === qi.itemId; }); if (it) url = it.url; }
+              }
+              if (url && typeof safeUrl === 'function') window.open(safeUrl(url), '_blank', 'noopener');
+            } else if (act === 'up' && i > 0) {
+              var tmp = window.quickLinks[i]; window.quickLinks[i] = window.quickLinks[i - 1]; window.quickLinks[i - 1] = tmp;
+              try { localStorage.setItem('nm_quickLinks', JSON.stringify(window.quickLinks)); } catch (er) {}
+              if (typeof window.renderQuickLinks === 'function') window.renderQuickLinks();
+            } else if (act === 'down' && i < window.quickLinks.length - 1) {
+              var tmp2 = window.quickLinks[i]; window.quickLinks[i] = window.quickLinks[i + 1]; window.quickLinks[i + 1] = tmp2;
+              try { localStorage.setItem('nm_quickLinks', JSON.stringify(window.quickLinks)); } catch (er) {}
+              if (typeof window.renderQuickLinks === 'function') window.renderQuickLinks();
+            } else if (act === 'remove') {
+              if (typeof window.removeFromQuickLinks === 'function') window.removeFromQuickLinks(qi.cardId, qi.itemId);
+            }
+          };
+        });
+      };
+
+      // renderQuickLinks ko wrap karo — tooltip attach karo
+      if (typeof window.renderQuickLinks === 'function') {
+        var _origRender = window.renderQuickLinks;
+        window.renderQuickLinks = function () {
+          _origRender();
+          setTimeout(function () {
+            var sec = document.getElementById('nmQuickLinksSec');
+            if (!sec) return;
+            sec.querySelectorAll('[data-ql-idx]').forEach(function (btn) {
+              // Sirf title rahe — badge, url hata do
+              var badge = btn.querySelector('.pi-count');
+              if (badge) badge.remove();
+              btn.querySelectorAll('.ql-url, .pi-sub').forEach(function (el) { el.remove(); });
+              // Tooltip long press attach
+              if (btn._qlTipBound) return;
+              btn._qlTipBound = true;
+              var idx = parseInt(btn.getAttribute('data-ql-idx'));
+              var lpTimer = null, lpFired = false;
+              btn.addEventListener('touchstart', function () {
+                lpFired = false;
+                lpTimer = setTimeout(function () {
+                  lpTimer = null; lpFired = true;
+                  if (typeof haptic === 'function') haptic(30);
+                  if (window.openQuickLinksTooltip) window.openQuickLinksTooltip(idx, btn);
+                }, 600);
+              }, { passive: true });
+              btn.addEventListener('touchend', function () {
+                if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+                if (lpFired) { setTimeout(function () { lpFired = false; }, 100); }
+              }, { passive: true });
+              btn.addEventListener('touchmove', function () {
+                if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+              }, { passive: true });
+              btn.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                if (window.openQuickLinksTooltip) window.openQuickLinksTooltip(idx, btn);
+              });
+            });
+          }, 40);
+        };
+      }
+
+      // Purane full-screen menu ko override
+      window.openQuickLinksItemMenu = function (idx) {
+        var sec = document.getElementById('nmQuickLinksSec');
+        if (!sec) return;
+        var btn = sec.querySelector('[data-ql-idx="' + idx + '"]');
+        if (!btn) return;
+        window.openQuickLinksTooltip(idx, btn);
+      };
+
+      // Pehli baar bhi attach karo
+      setTimeout(function () {
+        if (typeof window.renderQuickLinks === 'function') window.renderQuickLinks();
+      }, 800);
+    })();
+
+    /* ===== FIX 3 + 6: RIGHT PANEL SE SECTIONS REMOVE ===== */
+    (function () {
+      function removeRightSections() {
+        var rp = document.getElementById('rightPanel');
+        if (!rp) return;
+        var body = rp.querySelector('.panel-body');
+        if (!body) return;
+        var toRemove = ['Create', 'Manage', 'Appearance', 'Cloud', 'Data'];
+        body.querySelectorAll('.panel-group').forEach(function (grp) {
+          var title = grp.querySelector('.panel-group-title');
+          if (!title) return;
+          var txt = (title.textContent || '').trim();
+          for (var i = 0; i < toRemove.length; i++) {
+            if (txt.indexOf(toRemove[i]) >= 0) {
+              grp.remove();
+              return;
+            }
+          }
+        });
+      }
+      removeRightSections();
+      setInterval(removeRightSections, 1000);
+    })();
+
+    /* ===== FIX 4: STATISTICS LEFT PANEL SE HATAO + SETTINGS MEIN DAALO ===== */
+    (function () {
+      function removeStatsFromLeft() {
+        var lp = document.getElementById('leftPanel');
+        if (!lp) return;
+        lp.querySelectorAll('.panel-item').forEach(function (btn) {
+          var label = btn.querySelector('.pi-label');
+          if (label && (label.textContent || '').indexOf('Statistics') >= 0) {
+            btn.remove();
+          }
+        });
+      }
+      removeStatsFromLeft();
+      if (typeof window.buildLeftPanel === 'function') {
+        var _origBuild = window.buildLeftPanel;
+        window.buildLeftPanel = function () {
+          _origBuild();
+          setTimeout(removeStatsFromLeft, 10);
+        };
+      }
+
+      // Settings mein add karo
+      function addStatsToSettings() {
+        var sb = document.getElementById('settingsBody');
+        if (!sb) return;
+        if (document.getElementById('nmStatsSettingsRow')) return;
+        sb.querySelectorAll('.setting-section').forEach(function (sec) {
+          var h3 = sec.querySelector('h3');
+          if (h3 && (h3.textContent || '').indexOf('Data') >= 0) {
+            if (sec.querySelector('#nmStatsSettingsRow')) return;
+            var row = document.createElement('div');
+            row.className = 'setting-row';
+            row.id = 'nmStatsSettingsRow';
+            row.innerHTML = '<div class="sl"><div class="lb">📊 Statistics</div><div class="sb">App usage stats</div></div>' +
+              '<button style="padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#ec4899,#be185d);color:#fff;font-weight:700;font-size:12px;border:0;cursor:pointer;font-family:inherit" onclick="if(typeof setCl===\'function\')setCl();if(typeof openStats===\'function\')openStats()">Open</button>';
+            sec.insertBefore(row, sec.firstChild);
+          }
+        });
+      }
+      addStatsToSettings();
+      setTimeout(addStatsToSettings, 500);
+      setTimeout(addStatsToSettings, 1500);
+    })();
+
+    /* ===== FIX 5: PANEL ITEMS HEIGHT SLIDER RANGE 0.1x se 2.0x ===== */
+    (function () {
+      function fixSlider() {
+        var sl = document.getElementById('panelItemHeightSlider');
+        if (!sl) return;
+        sl.setAttribute('min', '10');
+        sl.setAttribute('max', '200');
+        if (!sl._nmFixed) {
+          sl._nmFixed = true;
+          var current = parseFloat(localStorage.getItem('nm_panelItemHeight')) || 1;
+          if (current < 0.1) current = 0.1;
+          sl.value = current * 100;
+        }
+      }
+      fixSlider();
+      setTimeout(fixSlider, 500);
+      setTimeout(fixSlider, 1500);
+      // Jab settings khule to bhi fix karo
+      var setOv = document.getElementById('setOv');
+      if (setOv) {
+        var obs = new MutationObserver(function () {
+          if (setOv.classList.contains('on')) fixSlider();
+        });
+        obs.observe(setOv, { attributes: true, attributeFilter: ['class'] });
+      }
+    })();
+
+    console.log('✅ PENDING PATCHES APPLIED: 6 changes');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
