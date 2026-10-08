@@ -5525,5 +5525,79 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== FIX: CARD BORDER VISIBLE (default + custom) ===== -->
+<style id="nm-card-border-final-style">
+  /* Default border — light purple (visible) */
+  #cards .card .card-in {
+    border: 1px solid rgba(99,102,241,.25) !important;
+  }
+  /* Night mode mein halka white */
+  body.night #cards .card .card-in {
+    border: 1px solid rgba(255,255,255,.15) !important;
+  }
+  /* Header card ka bhi same */
+  #cards .card.header-card .card-in {
+    border: 1px solid rgba(99,102,241,.25) !important;
+  }
+  body.night #cards .card.header-card .card-in {
+    border: 1px solid rgba(255,255,255,.15) !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (typeof cards === 'undefined' || typeof getColorHex !== 'function') {
+      setTimeout(init, 300); return;
+    }
+
+    // Purane conflicting patches hata do
+    ['nm-card-border-all-sides-style', 'nm-card-border-show-style', 'nm-header-border-1px-style'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.remove();
+    });
+
+    function applyBorder() {
+      document.querySelectorAll('#cards .card').forEach(function (cardEl) {
+        var cardIn = cardEl.querySelector('.card-in');
+        if (!cardIn) return;
+        var cid = parseInt(cardEl.getAttribute('data-cid'));
+        var c = cards.find(function (x) { return x.id === cid; });
+
+        // Border 1px chaaron taraf
+        cardIn.style.borderWidth = '1px';
+        cardIn.style.borderStyle = 'solid';
+
+        // Custom color ho to woh lagao
+        if (c && c.color) {
+          var hex = getColorHex(c.color);
+          if (hex && hex !== 'transparent') {
+            cardIn.style.borderColor = hex;
+            return;
+          }
+        }
+        // Warna CSS ka default use hone do
+        cardIn.style.borderColor = '';
+      });
+    }
+
+    // Pehli baar apply
+    setTimeout(applyBorder, 200);
+
+    // Har render ke baad apply
+    var _origRender = window.render;
+    window.render = function () {
+      _origRender();
+      setTimeout(applyBorder, 60);
+    };
+
+    // Fallback — har 3 second par
+    setInterval(applyBorder, 3000);
+
+    console.log('✅ FIX: Card border visible (default + custom)');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
