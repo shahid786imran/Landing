@@ -4590,5 +4590,124 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== PATCH: FULL HEADER REMOVE + ITEMS TOP ===== -->
+<style id="nm-full-header-remove-style">
+  /* Header ke andar ke sab elements hide karo — icon, title, close btn */
+  .side-panel .panel-header .ph-icon,
+  .side-panel .panel-header .ph-title,
+  .side-panel .panel-header .ph-close {
+    display: none !important;
+  }
+
+  /* Header ko patli line bana do — sirf border-bottom rahe */
+  .side-panel .panel-header {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    border-bottom: 1px solid rgba(255,255,255,.15) !important;
+    background: transparent !important;
+    display: block !important;
+  }
+  .side-panel-right .panel-header {
+    border-bottom-color: var(--bd) !important;
+  }
+
+  /* Panel body ko top se shuru karo */
+  .side-panel .panel-body {
+    padding: 8px 8px 20px !important;
+    margin-top: 0 !important;
+  }
+  .side-panel .panel-group:first-child {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    border-top: 0 !important;
+  }
+  .side-panel .panel-group:first-child .panel-group-title:first-child {
+    padding-top: 6px !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+    console.log('✅ PATCH: Full header removed, items at top');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH: QUICK LINKS SIRF TITLE ===== -->
+<style id="nm-ql-title-only-style">
+  /* Quick Links section ke items mein sirf icon + title */
+  #nmQuickLinksSec .panel-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    overflow: hidden !important;
+    min-width: 0 !important;
+    padding-right: 12px !important;
+  }
+  #nmQuickLinksSec .panel-item .pi-icon {
+    flex: 0 0 20px !important;
+    font-size: 14px !important;
+    width: 20px !important;
+    text-align: center !important;
+  }
+  #nmQuickLinksSec .panel-item .pi-label {
+    flex: 1 !important;
+    min-width: 0 !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  /* Card name badge, URL, sub text — sab hide */
+  #nmQuickLinksSec .panel-item .pi-count,
+  #nmQuickLinksSec .panel-item .pi-sub,
+  #nmQuickLinksSec .panel-item .ql-url,
+  #nmQuickLinksSec .panel-item .ql-url-preview {
+    display: none !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body || typeof window.renderQuickLinks !== 'function') {
+      setTimeout(init, 300); return;
+    }
+
+    // renderQuickLinks ko wrap karo — sirf title render karwao
+    var _origRender = window.renderQuickLinks;
+    window.renderQuickLinks = function () {
+      // Pehle original call se pehle state save
+      _origRender();
+      setTimeout(function () {
+        var sec = document.getElementById('nmQuickLinksSec');
+        if (!sec) return;
+        sec.querySelectorAll('[data-ql-idx]').forEach(function (btn) {
+          // Card name badge remove
+          var badge = btn.querySelector('.pi-count');
+          if (badge) badge.remove();
+          // URL preview / sub text remove
+          btn.querySelectorAll('.pi-sub, .ql-url, .ql-url-preview').forEach(function (el) { el.remove(); });
+          // Label sirf title rahe
+          var lbl = btn.querySelector('.pi-label');
+          if (lbl) {
+            lbl.style.whiteSpace = 'nowrap';
+            lbl.style.overflow = 'hidden';
+            lbl.style.textOverflow = 'ellipsis';
+          }
+        });
+      }, 40);
+    };
+
+    console.log('✅ PATCH: Quick Links sirf title');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
