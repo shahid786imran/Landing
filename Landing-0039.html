@@ -2751,5 +2751,242 @@ window.saveToFirebase = async d => { if (!window.firebaseUser) return; try { las
 window.syncFromFirebase = async () => { if (!window.firebaseUser) return false; try { const s = await getDoc(doc(db, "notes", window.firebaseUser.uid)); if (s.exists()) { window.loadFromFirebase(s.data()); return true; } } catch (e) {} return false; };
 setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls && !ls.classList.contains("hide")) { console.warn("Timeout"); hideLoadingScreen(); } }, 8000);
 </script>
+<!-- ===== MISSING FUNCTIONS PATCH ===== -->
+<script>
+(function() {
+  function init() {
+    if (typeof window.openNoteDetail !== 'function' || typeof cards === 'undefined') {
+      setTimeout(init, 300); return;
+    }
+
+    var itemLongPressTimer = null, itemLongPressFired = false;
+
+    window.onTS = function(e, cid, iid) {
+      if (e.target.closest("a,button,.chk")) return;
+      window._lastTouchedCard = cid;
+      clearTimeout(itemLongPressTimer); itemLongPressFired = false;
+      itemLongPressTimer = setTimeout(function() {
+        itemLongPressTimer = null;
+        itemLongPressFired = true;
+        if (typeof haptic === 'function') haptic(30);
+        window.openItemContext(cid, iid);
+      }, 500);
+    };
+    window.onTM = function() {
+      if (itemLongPressTimer) { clearTimeout(itemLongPressTimer); itemLongPressTimer = null; }
+    };
+    window.onTE = function() {
+      if (itemLongPressTimer) { clearTimeout(itemLongPressTimer); itemLongPressTimer = null; }
+      if (itemLongPressFired) { setTimeout(function() { itemLongPressFired = false; }, 100); }
+    };
+
+    window.onRowClick = function(cid, iid) {
+      if (itemLongPressFired) { itemLongPressFired = false; return; }
+      if (typeof showArchive !== 'undefined' && showArchive) return;
+      if (typeof multiSelect !== 'undefined' && multiSelect.active) {
+        if (typeof toggleRowSelect === 'function') toggleRowSelect(cid, iid);
+        return;
+      }
+      if (typeof editAll !== 'undefined' && editAll) {
+        if (typeof toast === 'function') toast("Edit mode: select only");
+        return;
+      }
+      var c = cards.find(function(x) { return x.id === cid; });
+      if (!c) return;
+      var it = c.items.find(function(x) { return x.id === iid; });
+      if (!it) return;
+      if (c.type === "link") {
+        window.open(safeUrl(it.url), "_blank", "noopener");
+      } else if (c.type === "note") {
+        window.openNoteDetail(cid, iid);
+      }
+    };
+
+    window.openItemContext = function(cid, iid) {
+      var c = cards.find(function(x) { return x.id === cid; }); if (!c) return;
+      var it = c.items.find(function(x) { return x.id === iid; }); if (!it) return;
+      ctxCur = { cid: cid, iid: iid };
+      snoozeTarget = { type: 'item', cid: cid, iid: iid };
+      var isLink = c.type === "link";
+      var cardLocked = c.locked;
+      var isSnoozed = isSnoozeActive(it.snoozeUntil);
+      document.getElementById("ctxIcon").textContent = safeIcon(it.icon) || (isLink ? "🔗" : "📝");
+      document.getElementById("ctxTitle").textContent = it.title || 'Untitled';
+      document.getElementById("ctxSub").textContent = isLink ? (it.url || "") : ((it.content || "").replace(/<[^>]+>/g,'').substring(0, 80));
+      var h = "";
+      h += '<button class="ctx-item open" onclick="ctxAction(\'open\')"><span class="ci-ic">' + (isLink ? '🔗' : '📝') + '</span><span class="ci-txt">Open</span></button>';
+      h += '<button class="ctx-item filter" onclick="ctxAction(\'filter\')"><span class="ci-ic">🎯</span><span class="ci-txt">Filters</span></button>';
+      h += '<button class="ctx-item copy ' + (cardLocked ? 'locked-disabled' : '') + '" onclick="' + (cardLocked ? '' : 'ctxAction(\'copy\')') + '"><span class="ci-ic">📋</span><span class="ci-txt">' + (isLink ? 'Copy Link' : 'Copy Note') + '</span></button>';
+      h += '<button class="ctx-item add ' + (cardLocked ? 'locked-disabled' : '') + '" onclick="' + (cardLocked ? '' : 'ctxAction(\'add\')') + '"><span class="ci-ic">➕</span><span class="ci-txt">Add New Item</span></button>';
+      h += '<button class="ctx-item edit ' + (cardLocked ? 'locked-disabled' : '') + '" onclick="' + (cardLocked ? '' : 'ctxAction(\'edit\')') + '"><span class="ci-ic">✎</span><span class="ci-txt">Edit Item</span></button>';
+      h += '<button class="ctx-item expiry ' + (cardLocked ? 'locked-disabled' : '') + '" onclick="' + (cardLocked ? '' : 'ctxAction(\'expiry\')') + '"><span class="ci-ic">⏰</span><span class="ci-txt">Set Expiry</span></button>';
+      h += '<button class="ctx-item lock" onclick="ctxAction(\'lock\')"><span class="ci-ic">🔒</span><span class="ci-txt">' + (it.locked ? 'Unlock Item' : 'Lock Item') + '</span></button>';
+      h += '<button class="ctx-item hide ' + (cardLocked ? 'locked-disabled' : '') + '" onclick="' + (cardLocked ? '' : 'ctxAction(\'hide\')') + '"><span class="ci-ic">👁️‍🗨️</span><span class="ci-txt">' + (it.hidden ? 'Unhide' : 'Hide Item') + '</span></button>';
+      if (isSnoozed) {
+        h += '<button class="ctx-item unsnooze ' + (cardLocked ? 'locked-disabled' : '') + '" onclick="' + (cardLocked ? '' : 'ctxAction(\'unsnooze\')') + '"><span class="ci-ic">🔔</span><span class="ci-txt">Cancel Snooze<div class="ci-sub">Baaki: ' + (it.snoozeUntil === -1 ? '∞' : fmtSnoozeLeft(it.snoozeUntil)) + '</div></span></button>';
+      } else {
+        h += '<button class="ctx-item snooze ' + (cardLocked ? 'locked-disabled' : '') + '" onclick="' + (cardLocked ? '' : 'ctxAction(\'snooze\')') + '"><span class="ci-ic">💤</span><span class="ci-txt">Snooze Item</span></button>';
+      }
+      h += '<button class="ctx-item fonts" onclick="ctxAction(\'fonts\')"><span class="ci-ic">🔤</span><span class="ci-txt">Font Settings</span></button>';
+      h += '<button class="ctx-item styles" onclick="ctxAction(\'styles\')"><span class="ci-ic">✨</span><span class="ci-txt">Text Styles</span></button>';
+      h += '<button class="ctx-item delete ' + (cardLocked ? 'locked-disabled' : '') + '" onclick="' + (cardLocked ? '' : 'ctxAction(\'delete\')') + '"><span class="ci-ic">🗑</span><span class="ci-txt">Delete Item</span></button>';
+      document.getElementById("ctxList").innerHTML = h;
+      if (typeof openModalWithZ === 'function') openModalWithZ("ctxOv", window.ctxClose);
+      if (typeof haptic === 'function') haptic(20);
+    };
+
+    window.ctxClose = function(e) {
+      if (e && e.target && e.target.closest('.ctx-sheet')) return;
+      document.getElementById("ctxOv").classList.remove("on");
+      if (typeof popModal === 'function') popModal();
+    };
+
+    window.ctxAction = function(action) {
+      var cur = ctxCur || {};
+      var cid = cur.cid, iid = cur.iid;
+      var c = cards.find(function(x) { return x.id === cid; });
+      var it = c ? c.items.find(function(x) { return x.id === iid; }) : null;
+      document.getElementById("ctxOv").classList.remove("on");
+      if (typeof popModal === 'function') popModal();
+      setTimeout(function() {
+        if (action === "fonts") { if (window.openFontWindow) window.openFontWindow(); return; }
+        if (action === "styles") { if (window.openStylesWindow) window.openStylesWindow(); return; }
+        if (!c || !it) return;
+        if (action === "open") {
+          if (c.type === "link") window.open(safeUrl(it.url), "_blank", "noopener");
+          else if (window.openNoteDetail) window.openNoteDetail(cid, iid);
+        }
+        else if (action === "filter") { if (window.openFilterSheet) window.openFilterSheet(); }
+        else if (action === "copy") {
+          if (c.locked) { toast("Card is locked"); return; }
+          var txt = c.type === "link" ? it.url : (it.content || it.title).replace(/<[^>]+>/g,'');
+          navigator.clipboard.writeText(txt).then(function() { toast("📋 Copied"); }).catch(function() { toast("Failed"); });
+        }
+        else if (action === "add") { if (c.locked) { toast("Card is locked"); return; } if (window.addItem) window.addItem(cid); }
+        else if (action === "edit") { if (c.locked) { toast("Card is locked"); return; } if (window.editItem) window.editItem(cid, iid); }
+        else if (action === "expiry") { if (c.locked) { toast("Card is locked"); return; } if (window.openExpiryPicker) window.openExpiryPicker(cid, iid); }
+        else if (action === "lock") { it.locked = !it.locked; c.updated = Date.now(); save(); render(); toast(it.locked ? "🔒 Item locked" : "🔓 Item unlocked"); }
+        else if (action === "hide") { if (c.locked) { toast("Card is locked"); return; } it.hidden = !it.hidden; c.updated = Date.now(); save(); render(); toast(it.hidden ? "👁️‍🗨️ Item hidden" : "Item visible"); }
+        else if (action === "snooze") { if (c.locked) { toast("Card is locked"); return; } snoozeTarget = { type: 'item', cid: cid, iid: iid }; if (typeof openSnooze === 'function') openSnooze(); }
+        else if (action === "unsnooze") { if (c.locked) { toast("Card is locked"); return; } snoozeTarget = { type: 'item', cid: cid, iid: iid }; if (window.cancelSnooze) window.cancelSnooze(); }
+        else if (action === "delete") { if (c.locked) { toast("Card is locked"); return; } if (typeof askArchiveItem === 'function') askArchiveItem(cid, iid); }
+      }, 250);
+    };
+
+    var cardLongPressTimer = null, cardLongPressFired = false;
+
+    window.startCardLongPress = function(e, cid) {
+      if (e.target.closest('button,.chk,input,textarea,a,.arc,.ad,.ud,.cx,.tag,.snooze-cancel-x')) return;
+      if (typeof showArchive !== 'undefined' && showArchive) return;
+      window._lastTouchedCard = cid;
+      clearTimeout(cardLongPressTimer); cardLongPressFired = false;
+      window.__cardLongPressFired = false;
+      cardLongPressTimer = setTimeout(function() {
+        cardLongPressTimer = null;
+        cardLongPressFired = true;
+        window.__cardLongPressFired = true;
+        if (typeof haptic === 'function') haptic(30);
+        if (typeof quickActionJustOpened !== 'undefined') quickActionJustOpened = Date.now();
+        window.openQuickActions(cid);
+      }, 600);
+    };
+    window.cancelCardLongPress = function() {
+      clearTimeout(cardLongPressTimer); cardLongPressTimer = null;
+    };
+
+    window.openQuickActions = function(cid) {
+      var isCard = typeof cid === 'number';
+      if (typeof quickActionsCur !== 'undefined') quickActionsCur = { cid: isCard ? cid : null };
+      var list = document.getElementById("quickActionsList");
+      var h = '';
+      if (!isCard) {
+        h += '<button class="sheet-item" onclick="quickAction(\'empty_add\')"><span class="si-ic" style="background:linear-gradient(135deg,#10b981,#059669)">➕</span><span class="si-txt">New Card</span></button>';
+        h += '<button class="sheet-item" onclick="quickAction(\'empty_fonts\')"><span class="si-ic" style="background:linear-gradient(135deg,#a855f7,#7c3aed)">🔤</span><span class="si-txt">Font Settings</span></button>';
+        h += '<button class="sheet-item" onclick="quickAction(\'empty_styles\')"><span class="si-ic" style="background:linear-gradient(135deg,#ec4899,#a855f7)">✨</span><span class="si-txt">Text Styles</span></button>';
+        h += '<button class="sheet-item" onclick="quickAction(\'empty_search\')"><span class="si-ic" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">🔍</span><span class="si-txt">Search</span></button>';
+        h += '<button class="sheet-item" onclick="quickAction(\'empty_settings\')"><span class="si-ic" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)">⚙️</span><span class="si-txt">Settings</span></button>';
+        list.innerHTML = h;
+        if (typeof openModalWithZ === 'function') openModalWithZ("quickActionsOv", window.closeQuickActions);
+        return;
+      }
+      var c = cards.find(function(x) { return x.id === cid; }); if (!c) return;
+      var isHeader = c.type === 'header';
+      var isSnoozed = isSnoozeActive(c.snoozeUntil);
+      if (!isHeader) h += '<button class="sheet-item" onclick="quickAction(\'add\')"><span class="si-ic" style="background:linear-gradient(135deg,#10b981,#059669)">➕</span><span class="si-txt">Add Item</span></button>';
+      h += '<button class="sheet-item" onclick="quickAction(\'edit\')"><span class="si-ic" style="background:linear-gradient(135deg,#f59e0b,#d97706)">✎</span><span class="si-txt">Edit Card</span></button>';
+      h += '<button class="sheet-item" onclick="quickAction(\'filter\')"><span class="si-ic" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">🎯</span><span class="si-txt">Filters</span></button>';
+      h += '<button class="sheet-item" onclick="quickAction(\'fonts\')"><span class="si-ic" style="background:linear-gradient(135deg,#a855f7,#7c3aed)">🔤</span><span class="si-txt">Font Settings</span></button>';
+      h += '<button class="sheet-item" onclick="quickAction(\'styles\')"><span class="si-ic" style="background:linear-gradient(135deg,#ec4899,#a855f7)">✨</span><span class="si-txt">Text Styles</span></button>';
+      if (!c.locked) {
+        h += '<button class="sheet-item" onclick="quickAction(\'pin\')"><span class="si-ic" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">' + (c.pinned ? '📍' : '📌') + '</span><span class="si-txt">' + (c.pinned ? 'Unpin Top' : 'Pin Top') + '</span></button>';
+        h += '<button class="sheet-item" onclick="quickAction(\'pinbottom\')"><span class="si-ic" style="background:linear-gradient(135deg,#0ea5e9,#0369a1)">⏬</span><span class="si-txt">' + (c.pinBottom ? 'Unpin Bottom' : 'Pin Bottom') + '</span></button>';
+        h += '<button class="sheet-item" onclick="quickAction(\'fav\')"><span class="si-ic" style="background:linear-gradient(135deg,#eab308,#a16207)">' + (c.fav ? '⭐' : '☆') + '</span><span class="si-txt">' + (c.fav ? 'Unfavorite' : 'Favorite') + '</span></button>';
+        h += '<button class="sheet-item" onclick="quickAction(\'titlebg\')"><span class="si-ic" style="background:linear-gradient(135deg,#06b6d4,#0e7490)">🎨</span><span class="si-txt">Title Background</span></button>';
+        h += '<button class="sheet-item" onclick="quickAction(\'bordercolor\')"><span class="si-ic" style="background:linear-gradient(135deg,#ec4899,#be185d)">🎯</span><span class="si-txt">Border Color</span></button>';
+        if (isHeader) {
+          var foldersOff = c.separateFromFolder;
+          h += '<button class="sheet-item" onclick="quickAction(\'folders\')"><span class="si-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">📁</span><span class="si-txt">Folders<div class="si-sub">' + (foldersOff ? 'Header top pe' : 'Folder group mein') + '</div></span><span class="si-badge ' + (foldersOff ? 'off' : 'on') + '">' + (foldersOff ? 'OFF' : 'ON') + '</span></button>';
+        }
+        h += '<button class="sheet-item" onclick="quickAction(\'hide\')"><span class="si-ic" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">👁️‍🗨️</span><span class="si-txt">' + (c.hidden ? 'Unhide' : 'Hide') + '</span></button>';
+        if (isSnoozed) {
+          h += '<button class="sheet-item" onclick="quickAction(\'unsnooze\')"><span class="si-ic" style="background:linear-gradient(135deg,#10b981,#059669)">🔔</span><span class="si-txt">Cancel Snooze<div class="si-sub">Baaki: ' + (c.snoozeUntil === -1 ? '∞' : fmtSnoozeLeft(c.snoozeUntil)) + '</div></span></button>';
+        } else {
+          h += '<button class="sheet-item" onclick="quickAction(\'snooze\')"><span class="si-ic" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">💤</span><span class="si-txt">Snooze</span></button>';
+        }
+        h += '<button class="sheet-item" onclick="quickAction(\'move\')"><span class="si-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">📁</span><span class="si-txt">Move to Folder</span></button>';
+        h += '<button class="sheet-item" onclick="quickAction(\'lock\')"><span class="si-ic" style="background:linear-gradient(135deg,#64748b,#475569)">🔒</span><span class="si-txt">Lock</span></button>';
+        h += '<button class="sheet-item" onclick="quickAction(\'archive\')"><span class="si-ic" style="background:linear-gradient(135deg,#64748b,#475569)">🗄</span><span class="si-txt">Archive</span></button>';
+      } else {
+        h += '<button class="sheet-item" onclick="quickAction(\'lock\')"><span class="si-ic" style="background:linear-gradient(135deg,#64748b,#475569)">🔓</span><span class="si-txt">Unlock</span></button>';
+      }
+      list.innerHTML = h;
+      if (typeof openModalWithZ === 'function') openModalWithZ("quickActionsOv", window.closeQuickActions);
+    };
+
+    window.closeQuickActions = function(e) {
+      if (e && e.target && e.target.closest('.sheet')) return;
+      if (typeof quickActionJustOpened !== 'undefined' && Date.now() - quickActionJustOpened < 350) return;
+      document.getElementById("quickActionsOv").classList.remove("on");
+      if (typeof popModal === 'function') popModal();
+    };
+
+    window.quickAction = function(action) {
+      var cur = quickActionsCur || {};
+      var cid = cur.cid;
+      document.getElementById("quickActionsOv").classList.remove("on");
+      if (typeof popModal === 'function') popModal();
+      if (action === 'empty_add') { setTimeout(function() { if (window.openAddMenu) window.openAddMenu(); }, 200); return; }
+      if (action === 'empty_fonts') { setTimeout(function() { if (window.openFontWindow) window.openFontWindow(); }, 200); return; }
+      if (action === 'empty_styles') { setTimeout(function() { if (window.openStylesWindow) window.openStylesWindow(); }, 200); return; }
+      if (action === 'empty_search') { setTimeout(function() { if (window.openSearch) window.openSearch(); }, 200); return; }
+      if (action === 'empty_settings') { setTimeout(function() { if (window.openSettings) window.openSettings(); }, 200); return; }
+      if (action === 'fonts') { setTimeout(function() { if (window.openFontWindow) window.openFontWindow(); }, 200); return; }
+      if (action === 'styles') { setTimeout(function() { if (window.openStylesWindow) window.openStylesWindow(); }, 200); return; }
+      var c = cards.find(function(x) { return x.id === cid; });
+      if (!c) return;
+      setTimeout(function() {
+        if (action === 'add') { if (window.addItem) window.addItem(cid); }
+        else if (action === 'edit') { if (window.editCard) window.editCard(cid); }
+        else if (action === 'filter') { if (window.openFilterSheet) window.openFilterSheet(); }
+        else if (action === 'pin') { if (typeof togglePin === 'function') togglePin(cid); }
+        else if (action === 'pinbottom') { if (typeof togglePinBottom === 'function') togglePinBottom(cid); }
+        else if (action === 'fav') { if (typeof toggleFav === 'function') toggleFav(cid); }
+        else if (action === 'titlebg') { if (window.openCardTitleBgPicker) window.openCardTitleBgPicker(cid); }
+        else if (action === 'bordercolor') { if (window.openCardBorderColorPicker) window.openCardBorderColorPicker(cid); }
+        else if (action === 'folders') { if (window.toggleHeaderFolderGroup) window.toggleHeaderFolderGroup(cid); }
+        else if (action === 'hide') { if (typeof toggleHideCard === 'function') toggleHideCard(cid); }
+        else if (action === 'snooze') { snoozeTarget = { type: 'card', cid: cid }; if (typeof openSnooze === 'function') openSnooze(); }
+        else if (action === 'unsnooze') { snoozeTarget = { type: 'card', cid: cid }; if (window.cancelSnooze) window.cancelSnooze(); }
+        else if (action === 'move') { multiSelect.ids.clear(); multiSelect.ids.add('c-' + cid); multiSelect.active = true; multiSelect.type = 'card'; if (typeof openMovePicker === 'function') openMovePicker(); }
+        else if (action === 'lock') { if (typeof toggleLockCard === 'function') toggleLockCard(cid); }
+        else if (action === 'archive') { if (typeof askArchiveCard === 'function') askArchiveCard(cid); }
+      }, 200);
+    };
+
+    console.log('✅ Missing functions patched');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
