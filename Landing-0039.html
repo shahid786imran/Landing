@@ -3635,5 +3635,348 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== ALL PENDING PATCHES (9 changes) ===== -->
+<script>
+(function () {
+  function init() {
+    if (!document.body || typeof window.openLeftPanel !== 'function' || typeof cards === 'undefined') {
+      setTimeout(init, 300); return;
+    }
+
+    /* ===== PATCH 1: PC PAR BUTTONS HIDE NA HON ===== */
+    (function () {
+      var isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+      if (isTouchDevice) return;
+
+      function forceShowButtons() {
+        var fab = document.getElementById('fab');
+        var lp = document.getElementById('leftPanelFab');
+        var rp = document.getElementById('rightPanelFab');
+        if (fab && !(typeof settings !== 'undefined' && settings.fabVisible === false)) {
+          fab.style.opacity = '1'; fab.style.pointerEvents = 'auto';
+        }
+        if (lp && !(typeof settings !== 'undefined' && settings.leftPanelEnabled === false)) {
+          lp.style.opacity = '1'; lp.style.pointerEvents = 'auto';
+        }
+        if (rp && !(typeof settings !== 'undefined' && settings.rightPanelEnabled === false)) {
+          rp.style.opacity = '1'; rp.style.pointerEvents = 'auto';
+        }
+      }
+      window._uiButtonsHidden = false;
+      forceShowButtons();
+      document.addEventListener('click', function () { setTimeout(forceShowButtons, 10); }, true);
+      try {
+        var obs = new MutationObserver(forceShowButtons);
+        ['fab', 'leftPanelFab', 'rightPanelFab'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) obs.observe(el, { attributes: true, attributeFilter: ['style'] });
+        });
+      } catch (e) {}
+    })();
+
+    /* ===== PATCH 2: GRID VIEW BORDER/INNER MARGIN KAM ===== */
+    (function () {
+      var style = document.createElement('style');
+      style.id = 'nm-grid-tight-style';
+      style.textContent = `
+        body.grid-view .lbody > div {
+          background: var(--bd) !important;
+          padding: 1px !important;
+          gap: 2px !important;
+          column-gap: 2px !important;
+          row-gap: 2px !important;
+        }
+        body.grid-view .lbody > div > .rw {
+          background: var(--s) !important;
+          border: 0 !important;
+          margin: 0 !important;
+          border-radius: 3px !important;
+          overflow: hidden !important;
+        }
+        body.grid-view .lbody > div > .rw .inner {
+          background: var(--s) !important;
+          border: 0 !important;
+          border-radius: 3px !important;
+          padding: 2px 4px !important;
+          height: 100% !important;
+          box-sizing: border-box !important;
+          box-shadow: none !important;
+          gap: 4px !important;
+        }
+        body.grid-view .lbody > div > .rw .ic {
+          width: 18px !important;
+          height: 18px !important;
+          min-width: 18px !important;
+          font-size: 14px !important;
+        }
+        body.grid-view .lbody > div > .rw .t {
+          font-size: 11px !important;
+        }
+      `;
+      document.head.appendChild(style);
+    })();
+
+    /* ===== PATCH 3 + 4: QUICK LINKS LONG PRESS + OVERLAP FIX ===== */
+    (function () {
+      var style = document.createElement('style');
+      style.textContent = `
+        #nmQuickLinksSec .panel-item {
+          display: flex !important;
+          align-items: center !important;
+          gap: 8px !important;
+          overflow: hidden !important;
+          min-width: 0 !important;
+        }
+        #nmQuickLinksSec .panel-item .pi-icon {
+          flex: 0 0 20px !important;
+          font-size: 14px !important;
+        }
+        #nmQuickLinksSec .panel-item .pi-label {
+          flex: 1 !important;
+          min-width: 0 !important;
+          font-size: 12px !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+        }
+        #nmQuickLinksSec .panel-item .pi-count {
+          flex: 0 0 auto !important;
+          font-size: 9px !important;
+          max-width: 70px !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          padding: 2px 6px !important;
+          background: var(--glass) !important;
+          color: var(--mt) !important;
+          border: 1px solid var(--glass-bd) !important;
+        }
+      `;
+      document.head.appendChild(style);
+
+      if (typeof window.renderQuickLinks === 'function') {
+        var _origRender = window.renderQuickLinks;
+        window.renderQuickLinks = function () {
+          _origRender();
+          setTimeout(function () {
+            var sec = document.getElementById('nmQuickLinksSec');
+            if (!sec) return;
+            sec.querySelectorAll('[data-ql-idx]').forEach(function (btn) {
+              if (btn._qlLongBound) return;
+              btn._qlLongBound = true;
+              var idx = parseInt(btn.getAttribute('data-ql-idx'));
+              var q = window.quickLinks[idx]; if (!q) return;
+              var lpTimer = null, lpFired = false;
+              btn.addEventListener('touchstart', function () {
+                lpFired = false;
+                lpTimer = setTimeout(function () {
+                  lpTimer = null; lpFired = true;
+                  if (typeof haptic === 'function') haptic(30);
+                  window.openQuickLinksItemMenu(idx);
+                }, 600);
+              }, { passive: true });
+              btn.addEventListener('touchend', function () {
+                if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+                if (lpFired) { setTimeout(function () { lpFired = false; }, 100); }
+              }, { passive: true });
+              btn.addEventListener('touchmove', function () {
+                if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+              }, { passive: true });
+              btn.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                window.openQuickLinksItemMenu(idx);
+              });
+            });
+          }, 30);
+        };
+      }
+
+      window.openQuickLinksItemMenu = function (idx) {
+        var q = window.quickLinks[idx];
+        if (!q) return;
+        var ctxIcon = document.getElementById('ctxIcon');
+        var ctxTitle = document.getElementById('ctxTitle');
+        var ctxSub = document.getElementById('ctxSub');
+        var ctxList = document.getElementById('ctxList');
+        if (!ctxList) return;
+        if (ctxIcon) ctxIcon.textContent = q.icon || '🔗';
+        if (ctxTitle) ctxTitle.textContent = q.title || 'Link';
+        if (ctxSub) ctxSub.textContent = (q.cardIcon || '') + ' ' + (q.cardName || '');
+        var h = '';
+        h += '<button class="ctx-item open" data-ql-act="open"><span class="ci-ic">🔗</span><span class="ci-txt">Open Link</span></button>';
+        h += '<button class="ctx-item" data-ql-act="up" style="' + (idx === 0 ? 'opacity:.4' : '') + '"><span class="ci-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">▲</span><span class="ci-txt">Move Up</span></button>';
+        h += '<button class="ctx-item" data-ql-act="down" style="' + (idx === window.quickLinks.length - 1 ? 'opacity:.4' : '') + '"><span class="ci-ic" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">▼</span><span class="ci-txt">Move Down</span></button>';
+        h += '<button class="ctx-item delete" data-ql-act="remove"><span class="ci-ic" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">🗑</span><span class="ci-txt">Remove</span></button>';
+        ctxList.innerHTML = h;
+        ctxList.querySelectorAll('[data-ql-act]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var act = btn.getAttribute('data-ql-act');
+            document.getElementById('ctxOv').classList.remove('on');
+            if (typeof popModal === 'function') popModal();
+            if (act === 'open') {
+              var url = q.url;
+              if (!url) {
+                var c = cards.find(function (x) { return x.id === q.cardId; });
+                if (c) { var it = c.items.find(function (x) { return x.id === q.itemId; }); if (it) url = it.url; }
+              }
+              if (url && typeof safeUrl === 'function') window.open(safeUrl(url), '_blank', 'noopener');
+            } else if (act === 'up' && idx > 0) {
+              var tmp = window.quickLinks[idx]; window.quickLinks[idx] = window.quickLinks[idx - 1]; window.quickLinks[idx - 1] = tmp;
+              try { localStorage.setItem('nm_quickLinks', JSON.stringify(window.quickLinks)); } catch (e) {}
+              if (typeof window.renderQuickLinks === 'function') window.renderQuickLinks();
+            } else if (act === 'down' && idx < window.quickLinks.length - 1) {
+              var tmp2 = window.quickLinks[idx]; window.quickLinks[idx] = window.quickLinks[idx + 1]; window.quickLinks[idx + 1] = tmp2;
+              try { localStorage.setItem('nm_quickLinks', JSON.stringify(window.quickLinks)); } catch (e) {}
+              if (typeof window.renderQuickLinks === 'function') window.renderQuickLinks();
+            } else if (act === 'remove') {
+              if (typeof window.removeFromQuickLinks === 'function') window.removeFromQuickLinks(q.cardId, q.itemId);
+            }
+          });
+        });
+        if (typeof openModalWithZ === 'function') openModalWithZ('ctxOv', window.ctxClose);
+      };
+    })();
+
+    /* ===== PATCH 5: SLIDER SCROLL FIX (stronger) ===== */
+    (function () {
+      var st = { active: false, x0: 0, y0: 0, disabled: false, el: null, decided: false };
+      document.addEventListener('touchstart', function (e) {
+        var t = e.target;
+        if (!t || t.type !== 'range') return;
+        var touch = e.touches[0];
+        st = { active: true, x0: touch.clientX, y0: touch.clientY, disabled: false, el: t, decided: false };
+        // Turant disable karo, phir decide karo
+        t.style.pointerEvents = 'none';
+        t._nmDisabled = true;
+      }, { passive: true });
+      document.addEventListener('touchmove', function (e) {
+        if (!st.active || !st.el) return;
+        var touch = e.touches[0];
+        var dx = Math.abs(touch.clientX - st.x0), dy = Math.abs(touch.clientY - st.y0);
+        if (!st.decided && (dx > 6 || dy > 6)) {
+          st.decided = true;
+          if (dx > dy) {
+            // Horizontal — slider enable karo
+            st.el.style.pointerEvents = '';
+            st.el._nmDisabled = false;
+          }
+        }
+      }, { passive: true });
+      function resetSlider() {
+        if (st.el) {
+          st.el.style.pointerEvents = '';
+          st.el._nmDisabled = false;
+        }
+        st = { active: false, x0: 0, y0: 0, disabled: false, el: null, decided: false };
+      }
+      document.addEventListener('touchend', resetSlider, { passive: true });
+      document.addEventListener('touchcancel', resetSlider, { passive: true });
+    })();
+
+    /* ===== PATCH 6: STATISTICS LEFT PANEL SE HATAO ===== */
+    (function () {
+      function removeStatsFromLeft() {
+        var lp = document.getElementById('leftPanel');
+        if (!lp) return false;
+        var removed = false;
+        lp.querySelectorAll('.panel-item').forEach(function (btn) {
+          var label = btn.querySelector('.pi-label');
+          if (label && (label.textContent || '').indexOf('Statistics') >= 0) {
+            btn.remove();
+            removed = true;
+          }
+        });
+        return removed;
+      }
+      removeStatsFromLeft();
+      if (typeof window.buildLeftPanel === 'function') {
+        var _origBuild = window.buildLeftPanel;
+        window.buildLeftPanel = function () {
+          _origBuild();
+          setTimeout(removeStatsFromLeft, 10);
+        };
+      }
+      // Settings mein add karo (agar Data & Storage section mein nahi hai)
+      setTimeout(function () {
+        var sb = document.getElementById('settingsBody');
+        if (!sb) return;
+        if (document.getElementById('nmStatsSettingsRow')) return;
+        sb.querySelectorAll('.setting-section').forEach(function (sec) {
+          var h3 = sec.querySelector('h3');
+          if (h3 && (h3.textContent || '').indexOf('Data') >= 0) {
+            if (sec.querySelector('#nmStatsSettingsRow')) return;
+            var row = document.createElement('div');
+            row.className = 'setting-row';
+            row.id = 'nmStatsSettingsRow';
+            row.innerHTML = '<div class="sl"><div class="lb">📊 Statistics</div><div class="sb">App usage stats</div></div>' +
+              '<button style="padding:8px 14px;border-radius:10px;background:linear-gradient(135deg,#ec4899,#be185d);color:#fff;font-weight:700;font-size:12px;border:0;cursor:pointer;font-family:inherit" onclick="setCl();openStats()">Open</button>';
+            sec.insertBefore(row, sec.firstChild);
+          }
+        });
+      }, 800);
+    })();
+
+    /* ===== PATCH 7: HOME PAGE SECTIONS SPACE BARABAR ===== */
+    (function () {
+      var style = document.createElement('style');
+      style.textContent = `
+        .standalone-headers { margin-bottom: calc(14px * var(--pad)) !important; }
+        .folder-group { margin-bottom: calc(14px * var(--pad)) !important; margin-top: 0 !important; }
+        .standalone-headers + .folder-group,
+        .folder-group + .folder-group,
+        .folder-group + .standalone-headers { margin-top: 0 !important; }
+        .standalone-headers .card:last-child { margin-bottom: 0 !important; }
+        .folder-group .card:last-child { margin-bottom: 0 !important; }
+      `;
+      document.head.appendChild(style);
+    })();
+
+    /* ===== PATCH 8: PANEL ITEMS HEIGHT SLIDER RANGE 0.1x se 2.0x ===== */
+    (function () {
+      function fixSlider() {
+        var sl = document.getElementById('panelItemHeightSlider');
+        if (!sl || sl._nmFixed) return;
+        sl._nmFixed = true;
+        sl.setAttribute('min', '10');
+        sl.setAttribute('max', '200');
+        // Value ko preserve karo
+        var current = parseFloat(localStorage.getItem('nm_panelItemHeight')) || 1;
+        sl.value = current * 100;
+      }
+      fixSlider();
+      setTimeout(fixSlider, 500);
+      setTimeout(fixSlider, 1500);
+    })();
+
+    /* ===== PATCH 9: RIGHT PANEL SE 4 SECTIONS REMOVE ===== */
+    (function () {
+      function removeSections() {
+        var rp = document.getElementById('rightPanel');
+        if (!rp) return;
+        var body = rp.querySelector('.panel-body');
+        if (!body) return;
+        var sectionsToRemove = ['Create', 'Manage', 'Appearance', 'Cloud'];
+        body.querySelectorAll('.panel-group').forEach(function (grp) {
+          var title = grp.querySelector('.panel-group-title');
+          if (!title) return;
+          var txt = (title.textContent || '').trim();
+          for (var i = 0; i < sectionsToRemove.length; i++) {
+            if (txt.indexOf(sectionsToRemove[i]) >= 0) {
+              grp.remove();
+              return;
+            }
+          }
+        });
+      }
+      removeSections();
+      // Baar baar call karo agar right panel rebuild ho
+      setInterval(removeSections, 1000);
+    })();
+
+    console.log('✅ ALL 9 PENDING PATCHES APPLIED');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
