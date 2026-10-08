@@ -4709,5 +4709,197 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== PATCH: HEADER CARD BORDER 1PX ===== -->
+<style id="nm-header-border-1px-style">
+  /* Main header card ka border 1px */
+  body .card.header-card .card-in,
+  html body .card.header-card .card-in,
+  #cards .card.header-card .card-in {
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-color: var(--card-bd) !important;
+  }
+  /* Custom border color ho to woh respect ho */
+  body .card.header-card.custom-border .card-in,
+  html body .card.header-card.custom-border .card-in,
+  #cards .card.header-card.custom-border .card-in {
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-color: var(--header-border-color, var(--card-bd)) !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+    console.log('✅ PATCH: Header card border 1px');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH: QUICK LINKS FORCE SIRF TITLE ===== -->
+<style id="nm-ql-force-title-style">
+  /* Quick Links section ke sab items par lagao — kisi bhi trick se */
+  #nmQuickLinksSec .panel-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    overflow: hidden !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 10px 12px !important;
+    flex-wrap: nowrap !important;
+  }
+  #nmQuickLinksSec .panel-item .pi-icon {
+    flex: 0 0 22px !important;
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 14px !important;
+    text-align: center !important;
+    line-height: 22px !important;
+    overflow: hidden !important;
+  }
+  #nmQuickLinksSec .panel-item .pi-label {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+    color: var(--tx) !important;
+  }
+  /* Har cheez jo icon aur label ke ilawa hai — hide */
+  #nmQuickLinksSec .panel-item > *:not(.pi-icon):not(.pi-label) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+  }
+  /* URL text jaisa kuch bhi ho to */
+  #nmQuickLinksSec .panel-item .ql-url,
+  #nmQuickLinksSec .panel-item .ql-url-preview,
+  #nmQuickLinksSec .panel-item .pi-sub,
+  #nmQuickLinksSec .panel-item .pi-count,
+  #nmQuickLinksSec .panel-item .ql-card-name {
+    display: none !important;
+    visibility: hidden !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+
+    // Har baar renderQuickLinks chalne par URL/card name hatane ke liye
+    function cleanQuickLinks() {
+      var sec = document.getElementById('nmQuickLinksSec');
+      if (!sec) return;
+      sec.querySelectorAll('.panel-item').forEach(function (btn) {
+        // pi-icon aur pi-label ke ilawa sab remove
+        Array.from(btn.children).forEach(function (child) {
+          if (child.classList.contains('pi-icon') || child.classList.contains('pi-label')) return;
+          child.remove();
+        });
+        // pi-label ki ek hi copy rahe
+        var labels = btn.querySelectorAll('.pi-label');
+        if (labels.length > 1) {
+          for (var i = 1; i < labels.length; i++) labels[i].remove();
+        }
+        // label ki andar bhi URL type text ho to hatao
+        var lbl = btn.querySelector('.pi-label');
+        if (lbl) {
+          // Agar label ke andar aur koi element hai to usko remove karo
+          Array.from(lbl.children).forEach(function (c) { c.remove(); });
+        }
+      });
+    }
+
+    // renderQuickLinks wrap karo
+    if (typeof window.renderQuickLinks === 'function') {
+      var _orig = window.renderQuickLinks;
+      window.renderQuickLinks = function () {
+        _orig();
+        setTimeout(cleanQuickLinks, 10);
+        setTimeout(cleanQuickLinks, 80);
+        setTimeout(cleanQuickLinks, 250);
+      };
+    }
+
+    // periodically bhi
+    setInterval(cleanQuickLinks, 1000);
+
+    // MutationObserver — Quick Links section mein badlav par
+    try {
+      var rp = document.getElementById('rightPanel');
+      if (rp) {
+        var obs = new MutationObserver(cleanQuickLinks);
+        obs.observe(rp, { childList: true, subtree: true });
+      }
+    } catch (e) {}
+
+    console.log('✅ PATCH: Quick Links FORCE sirf title');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH: GRID VIEW TIGHT PADDING + TITLE FULL WIDTH ===== -->
+<style id="nm-grid-tight-padding-style">
+  /* Grid view items ke andar ka space kam karo */
+  body.grid-view .lbody > div > .rw .inner {
+    padding: 1px 2px !important;
+    gap: 2px !important;
+  }
+
+  /* Icon chhota karo */
+  body.grid-view .lbody > div > .rw .ic {
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    font-size: 12px !important;
+  }
+
+  /* Title ko poori width do */
+  body.grid-view .lbody > div > .rw .if {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    overflow: hidden !important;
+  }
+
+  /* Title font size thoda chhota, ellipsis ke saath */
+  body.grid-view .lbody > div > .rw .t {
+    font-size: 11px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Extra margin/padding hatao */
+  body.grid-view .lbody > div > .rw {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+    console.log('✅ PATCH: Grid view tight padding + title full width');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
