@@ -5671,5 +5671,80 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== FIX: HEADER CARD BORDER COLOR CHANGE ===== -->
+<style id="nm-header-border-fix-style">
+  /* Header card ka border — variable se aayega */
+  #cards .card.header-card .card-in {
+    border: 1px solid var(--nm-header-border-color, rgba(99,102,241,.25)) !important;
+  }
+  body.night #cards .card.header-card .card-in {
+    border: 1px solid var(--nm-header-border-color, rgba(255,255,255,.15)) !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (typeof cards === 'undefined' || typeof getColorHex !== 'function') {
+      setTimeout(init, 300); return;
+    }
+
+    // Purane conflicting patches hatao
+    ['nm-card-border-final2-style', 'nm-card-border-final-style'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.remove();
+    });
+
+    function applyBorder() {
+      document.querySelectorAll('#cards .card').forEach(function (cardEl) {
+        var cardIn = cardEl.querySelector('.card-in');
+        if (!cardIn) return;
+        var cid = parseInt(cardEl.getAttribute('data-cid'));
+        var c = cards.find(function (x) { return x.id === cid; });
+        if (!c) return;
+
+        var isHeader = c.type === 'header';
+
+        if (c.color) {
+          var hex = getColorHex(c.color);
+          if (hex && hex !== 'transparent') {
+            if (isHeader) {
+              cardIn.style.setProperty('--nm-header-border-color', hex);
+            } else {
+              cardIn.style.setProperty('--nm-card-border-color', hex);
+            }
+            return;
+          }
+        }
+        // Reset — default color
+        if (isHeader) {
+          cardIn.style.removeProperty('--nm-header-border-color');
+        } else {
+          cardIn.style.removeProperty('--nm-card-border-color');
+        }
+      });
+    }
+
+    setTimeout(applyBorder, 200);
+
+    var _origRender = window.render;
+    window.render = function () {
+      _origRender();
+      setTimeout(applyBorder, 60);
+    };
+
+    // Colour change hone par turant apply
+    document.addEventListener('click', function (e) {
+      var chip = e.target.closest('.color-opt[onclick*="applyCardBorder"], .color-opt[data-c]');
+      if (chip) setTimeout(applyBorder, 150);
+    }, true);
+
+    setInterval(applyBorder, 3000);
+
+    console.log('✅ FIX: Header card border color changeable');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
