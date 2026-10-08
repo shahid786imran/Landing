@@ -5746,5 +5746,79 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== FIX: GRID VIEW ITEMS BORDER SAME AS CARD COLOR ===== -->
+<style id="nm-grid-item-border-style">
+  /* Grid view ke items ka border 1px chaaron taraf — variable se */
+  body.grid-view .lbody > div > .rw .inner {
+    border: 1px solid var(--nm-grid-item-border-color, rgba(99,102,241,.25)) !important;
+    border-radius: 3px !important;
+  }
+  body.night.grid-view .lbody > div > .rw .inner {
+    border: 1px solid var(--nm-grid-item-border-color, rgba(255,255,255,.15)) !important;
+  }
+  /* Container ka background hata do — sirf item ka border dikhe */
+  body.grid-view .lbody > div {
+    background: transparent !important;
+    padding: 0 !important;
+    gap: 2px !important;
+  }
+  body.grid-view .lbody > div > .rw {
+    background: transparent !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (typeof cards === 'undefined' || typeof getColorHex !== 'function') {
+      setTimeout(init, 300); return;
+    }
+
+    function applyGridItemBorder() {
+      document.querySelectorAll('#cards .card').forEach(function (cardEl) {
+        var cid = parseInt(cardEl.getAttribute('data-cid'));
+        var c = cards.find(function (x) { return x.id === cid; });
+        if (!c) return;
+
+        var items = cardEl.querySelectorAll('.rw .inner');
+        if (!items.length) return;
+
+        var hex = null;
+        if (c.color) {
+          var h = getColorHex(c.color);
+          if (h && h !== 'transparent') hex = h;
+        }
+
+        items.forEach(function (inner) {
+          if (hex) {
+            inner.style.setProperty('--nm-grid-item-border-color', hex);
+          } else {
+            inner.style.removeProperty('--nm-grid-item-border-color');
+          }
+        });
+      });
+    }
+
+    setTimeout(applyGridItemBorder, 200);
+
+    var _origRender = window.render;
+    window.render = function () {
+      _origRender();
+      setTimeout(applyGridItemBorder, 80);
+    };
+
+    // Colour change hone par turant apply
+    document.addEventListener('click', function (e) {
+      var chip = e.target.closest('.color-opt[onclick*="applyCardBorder"], .color-opt[data-c]');
+      if (chip) setTimeout(applyGridItemBorder, 200);
+    }, true);
+
+    setInterval(applyGridItemBorder, 3000);
+
+    console.log('✅ FIX: Grid view items border same as card color');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
