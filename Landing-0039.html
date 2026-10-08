@@ -5450,5 +5450,80 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== FIX: CARD BORDER SHOW ===== -->
+<style id="nm-card-border-show-style">
+  /* Har card ka border 1px chaaron taraf — visible */
+  #cards .card .card-in {
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-color: var(--card-bd) !important;
+    border-left-color: var(--card-bd) !important;
+    border-right-color: var(--card-bd) !important;
+    border-top-color: var(--card-bd) !important;
+    border-bottom-color: var(--card-bd) !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body || typeof window.render !== 'function') {
+      setTimeout(init, 300); return;
+    }
+
+    // Purana patch hatao jo border ko block kar raha tha
+    var oldStyle = document.getElementById('nm-card-border-all-sides-style');
+    if (oldStyle) oldStyle.remove();
+
+    // Render wrap — har render ke baad har card ka border fix karo
+    var _origRender = window.render;
+    window.render = function () {
+      _origRender();
+      setTimeout(function () {
+        var cardEls = document.querySelectorAll('#cards .card .card-in');
+        cardEls.forEach(function (cardIn) {
+          var cardEl = cardIn.closest('.card');
+          if (!cardEl) return;
+          var cid = cardEl.getAttribute('data-cid');
+          var c = null;
+          if (cid && typeof cards !== 'undefined') {
+            c = cards.find(function (x) { return x.id === parseInt(cid); });
+          }
+          // Custom color
+          var customColor = null;
+          if (c && c.color && typeof getColorHex === 'function') {
+            var hex = getColorHex(c.color);
+            if (hex && hex !== 'transparent') customColor = hex;
+          }
+          // Apply border
+          cardIn.style.borderWidth = '1px';
+          cardIn.style.borderStyle = 'solid';
+          if (customColor) {
+            cardIn.style.borderLeftColor = customColor;
+            cardIn.style.borderRightColor = customColor;
+            cardIn.style.borderTopColor = customColor;
+            cardIn.style.borderBottomColor = customColor;
+            cardIn.style.borderColor = customColor;
+          } else {
+            cardIn.style.borderLeftColor = '';
+            cardIn.style.borderRightColor = '';
+            cardIn.style.borderTopColor = '';
+            cardIn.style.borderBottomColor = '';
+            cardIn.style.borderColor = '';
+          }
+        });
+      }, 50);
+    };
+
+    // Pehli baar
+    setTimeout(function () {
+      if (typeof window.render === 'function') window.render();
+    }, 500);
+
+    console.log('✅ FIX: Card border visible');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
