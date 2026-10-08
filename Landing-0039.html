@@ -2988,5 +2988,329 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== SWIPE TO OPEN PANELS ===== -->
+<script>
+(function () {
+  function init() {
+    if (typeof window.openLeftPanel !== 'function' || typeof window.openRightPanel !== 'function') {
+      setTimeout(init, 300); return;
+    }
+
+    var swipe = { active: false, x0: 0, y0: 0, dx: 0, dy: 0, valid: false };
+
+    function blocked(t) {
+      if (!t) return true;
+      if (t.closest('button, .chk, input, textarea, select, a, .switch, .slider')) return true;
+      if (t.closest('.ov.on, .sheet-ov.on, .ctx-ov.on, .side-panel, .multiselect-bar.on, .bin-bar.on, .panel-backdrop.on')) return true;
+      return false;
+    }
+
+    document.addEventListener('touchstart', function (e) {
+      swipe.valid = false;
+      if (e.touches.length !== 1) return;
+      if (document.querySelector('.ov.on, .sheet-ov.on, .ctx-ov.on, .side-panel.on')) return;
+      if (typeof leftPanelOpen !== 'undefined' && leftPanelOpen) return;
+      if (typeof rightPanelOpen !== 'undefined' && rightPanelOpen) return;
+      if (typeof multiSelect !== 'undefined' && multiSelect.active) return;
+      if (typeof editAll !== 'undefined' && editAll) return;
+      if (blocked(e.target)) return;
+      var t = e.touches[0];
+      swipe.active = true;
+      swipe.valid = true;
+      swipe.x0 = t.clientX;
+      swipe.y0 = t.clientY;
+      swipe.dx = 0;
+      swipe.dy = 0;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function (e) {
+      if (!swipe.active) return;
+      if (e.touches.length !== 1) { swipe.active = false; return; }
+      var t = e.touches[0];
+      swipe.dx = t.clientX - swipe.x0;
+      swipe.dy = t.clientY - swipe.y0;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function () {
+      if (!swipe.active) { swipe.valid = false; return; }
+      var dx = swipe.dx, dy = swipe.dy, valid = swipe.valid;
+      swipe.active = false;
+      swipe.valid = false;
+      if (!valid) return;
+      var absDx = Math.abs(dx), absDy = Math.abs(dy);
+
+      // Horizontal swipe → panels
+      if (absDx > 70 && absDx > absDy * 1.5) {
+        if (dx > 0) window.openLeftPanel();
+        else window.openRightPanel();
+        try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) {}
+        return;
+      }
+
+      // Vertical swipe → gesture action
+      if (absDy > 70 && absDy > absDx * 1.5) {
+        var sUp = localStorage.getItem('nm_swipeUp') || 'quickadd';
+        var sDown = localStorage.getItem('nm_swipeDown') || 'archive';
+        var act = dy < 0 ? sUp : sDown;
+        if (act && act !== 'none') {
+          if (act === 'filter' && window.openFilterSheet) window.openFilterSheet();
+          else if (act === 'context') { if (typeof openSheet === 'function') openSheet(); }
+          else if (act === 'quickadd' && window.openAddMenu) window.openAddMenu();
+          else if (act === 'settings' && window.openSettings) window.openSettings();
+          else if (act === 'search' && window.openSearch) window.openSearch();
+          else if (act === 'archive' && typeof toggleArchive === 'function') toggleArchive();
+          else if (act === 'health' && window.openHealth) window.openHealth();
+          else if (act === 'stats' && window.openStats) window.openStats();
+          else if (act === 'dups' && window.openDupScan) window.openDupScan();
+          else if (act === 'folders' && window.openFolderMgr) window.openFolderMgr();
+          else if (act === 'leftpanel') window.openLeftPanel();
+          else if (act === 'rightpanel') window.openRightPanel();
+        }
+        try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) {}
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchcancel', function () { swipe.active = false; swipe.valid = false; }, { passive: true });
+
+    console.log('✅ Swipe to open panels ready');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH 1: SWIPE TO OPEN PANELS ===== -->
+<script>
+(function () {
+  function init() {
+    if (typeof window.openLeftPanel !== 'function' || typeof window.openRightPanel !== 'function') {
+      setTimeout(init, 300); return;
+    }
+
+    var swipe = { active: false, x0: 0, y0: 0, dx: 0, dy: 0, valid: false };
+
+    function blocked(t) {
+      if (!t) return true;
+      if (t.closest('button, .chk, input, textarea, select, a, .switch, .slider')) return true;
+      if (t.closest('.ov.on, .sheet-ov.on, .ctx-ov.on, .side-panel, .multiselect-bar.on, .bin-bar.on, .panel-backdrop.on')) return true;
+      return false;
+    }
+
+    document.addEventListener('touchstart', function (e) {
+      swipe.valid = false;
+      if (e.touches.length !== 1) return;
+      if (document.querySelector('.ov.on, .sheet-ov.on, .ctx-ov.on, .side-panel.on')) return;
+      if (typeof leftPanelOpen !== 'undefined' && leftPanelOpen) return;
+      if (typeof rightPanelOpen !== 'undefined' && rightPanelOpen) return;
+      if (typeof multiSelect !== 'undefined' && multiSelect.active) return;
+      if (typeof editAll !== 'undefined' && editAll) return;
+      if (blocked(e.target)) return;
+      var t = e.touches[0];
+      swipe.active = true;
+      swipe.valid = true;
+      swipe.x0 = t.clientX;
+      swipe.y0 = t.clientY;
+      swipe.dx = 0;
+      swipe.dy = 0;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function (e) {
+      if (!swipe.active) return;
+      if (e.touches.length !== 1) { swipe.active = false; return; }
+      var t = e.touches[0];
+      swipe.dx = t.clientX - swipe.x0;
+      swipe.dy = t.clientY - swipe.y0;
+    }, { passive: true });
+
+    document.addEventListener('touchend', function () {
+      if (!swipe.active) { swipe.valid = false; return; }
+      var dx = swipe.dx, dy = swipe.dy, valid = swipe.valid;
+      swipe.active = false;
+      swipe.valid = false;
+      if (!valid) return;
+      var absDx = Math.abs(dx), absDy = Math.abs(dy);
+
+      if (absDx > 70 && absDx > absDy * 1.5) {
+        if (dx > 0) window.openLeftPanel();
+        else window.openRightPanel();
+        try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) {}
+        return;
+      }
+
+      if (absDy > 70 && absDy > absDx * 1.5) {
+        var sUp = localStorage.getItem('nm_swipeUp') || 'quickadd';
+        var sDown = localStorage.getItem('nm_swipeDown') || 'archive';
+        var act = dy < 0 ? sUp : sDown;
+        if (act && act !== 'none') {
+          if (act === 'filter' && window.openFilterSheet) window.openFilterSheet();
+          else if (act === 'context') { if (typeof openSheet === 'function') openSheet(); }
+          else if (act === 'quickadd' && window.openAddMenu) window.openAddMenu();
+          else if (act === 'settings' && window.openSettings) window.openSettings();
+          else if (act === 'search' && window.openSearch) window.openSearch();
+          else if (act === 'archive' && typeof toggleArchive === 'function') toggleArchive();
+          else if (act === 'health' && window.openHealth) window.openHealth();
+          else if (act === 'stats' && window.openStats) window.openStats();
+          else if (act === 'dups' && window.openDupScan) window.openDupScan();
+          else if (act === 'folders' && window.openFolderMgr) window.openFolderMgr();
+          else if (act === 'leftpanel') window.openLeftPanel();
+          else if (act === 'rightpanel') window.openRightPanel();
+        }
+        try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) {}
+      }
+    }, { passive: true });
+
+    document.addEventListener('touchcancel', function () { swipe.active = false; swipe.valid = false; }, { passive: true });
+
+    console.log('✅ PATCH 1: Swipe to open panels ready');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH 2: GRID VIEW COLUMNS GAP 2PX ===== -->
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+
+    var style = document.createElement('style');
+    style.id = 'nm-grid-gap-style';
+    style.textContent = `
+      body.grid-view .lbody > div {
+        gap: 2px !important;
+        column-gap: 2px !important;
+        row-gap: 2px !important;
+      }
+      body.grid-view .lbody > div > .rw {
+        border-bottom: 0 !important;
+        margin: 0 !important;
+      }
+      body.grid-view .lbody > div > .rw .inner {
+        border: 1px solid var(--bd) !important;
+        border-radius: 4px !important;
+        height: 100% !important;
+        box-sizing: border-box !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    console.log('✅ PATCH 2: Grid view gap 2px ready');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH 3: GRID VIEW SIRF ICON + TITLE ===== -->
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+
+    var style = document.createElement('style');
+    style.id = 'nm-grid-minimal-style';
+    style.textContent = `
+      /* Grid view: sirf icon + title dikhe, baaki sab hide */
+      body.grid-view .lbody > div > .rw .u,
+      body.grid-view .lbody > div > .rw .ts,
+      body.grid-view .lbody > div > .rw .lock-indicator,
+      body.grid-view .lbody > div > .rw .chk,
+      body.grid-view .lbody > div > .rw .ud-btns,
+      body.grid-view .lbody > div > .rw .item-tags,
+      body.grid-view .lbody > div > .rw .expiry-badge,
+      body.grid-view .lbody > div > .rw .snooze-badge {
+        display: none !important;
+      }
+      /* Icon aur title ko vertically center karo */
+      body.grid-view .lbody > div > .rw .inner {
+        justify-content: flex-start !important;
+        gap: 8px !important;
+      }
+      body.grid-view .lbody > div > .rw .if {
+        min-width: 0 !important;
+      }
+      body.grid-view .lbody > div > .rw .t {
+        font-size: 12px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    console.log('✅ PATCH 3: Grid view minimal ready');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH 4: EMPTY AREA TAP TOGGLE BUTTONS ===== -->
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+
+    var tap = { active: false, x0: 0, y0: 0, time: 0, empty: false };
+
+    function isTrulyEmpty(target) {
+      if (!target || !target.tagName) return false;
+      if (target.tagName === 'BODY' || target.tagName === 'HTML') return true;
+      if (target.id === 'cards' || target.id === 'smartSuggestionSlot') return true;
+      if (target.closest('.card, .rw, .hh, .hcard, .folder-group, .folder-header, .folder-body, .standalone-headers')) return false;
+      if (target.closest('button, .chk, input, textarea, select, a, .switch, .slider, .panel-item, .panel-fab, .fab')) return false;
+      if (target.closest('.ov.on, .sheet-ov.on, .ctx-ov.on, .side-panel, .multiselect-bar.on, .bin-bar.on, .panel-backdrop.on')) return false;
+      if (target.closest('.smart-suggestion, .archive-entry, .archive-header-bar, .bin-info, .archive-clear')) return false;
+      return true;
+    }
+
+    document.addEventListener('touchstart', function (e) {
+      tap.active = false;
+      tap.empty = false;
+      if (e.touches.length !== 1) return;
+      if (document.querySelector('.ov.on, .sheet-ov.on, .ctx-ov.on, .side-panel.on')) return;
+      if (typeof leftPanelOpen !== 'undefined' && leftPanelOpen) return;
+      if (typeof rightPanelOpen !== 'undefined' && rightPanelOpen) return;
+      if (typeof multiSelect !== 'undefined' && multiSelect.active) return;
+      if (typeof editAll !== 'undefined' && editAll) return;
+      if (!isTrulyEmpty(e.target)) return;
+      var t = e.touches[0];
+      tap.active = true;
+      tap.empty = true;
+      tap.x0 = t.clientX;
+      tap.y0 = t.clientY;
+      tap.time = Date.now();
+    }, { passive: true, capture: false });
+
+    document.addEventListener('touchend', function (e) {
+      if (!tap.active || !tap.empty) { tap.active = false; tap.empty = false; return; }
+      var touch = e.changedTouches ? e.changedTouches[0] : null;
+      if (!touch) { tap.active = false; tap.empty = false; return; }
+      var dx = Math.abs(touch.clientX - tap.x0);
+      var dy = Math.abs(touch.clientY - tap.y0);
+      var dt = Date.now() - tap.time;
+      var wasEmpty = tap.empty;
+      tap.active = false;
+      tap.empty = false;
+
+      if (!wasEmpty) return;
+      if (dt > 400) return;
+      if (dx > 10 || dy > 10) return;
+
+      // Toggle buttons
+      window._uiButtonsHidden = !window._uiButtonsHidden;
+      ['fab', 'leftPanelFab', 'rightPanelFab'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.style.transition = 'opacity 0.25s';
+        el.style.opacity = window._uiButtonsHidden ? '0' : '';
+        el.style.pointerEvents = window._uiButtonsHidden ? 'none' : '';
+      });
+      try { if (navigator.vibrate && localStorage.getItem('nm_vibrate') !== 'false') navigator.vibrate(10); } catch (err) {}
+    }, { passive: true });
+
+    document.addEventListener('touchcancel', function () {
+      tap.active = false;
+      tap.empty = false;
+    }, { passive: true });
+
+    console.log('✅ PATCH 4: Empty area tap toggle ready');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
