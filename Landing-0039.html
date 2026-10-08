@@ -4957,5 +4957,216 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== PATCH: SETTINGS LOCK BUTTONS ===== -->
+<style id="nm-setting-lock-style">
+  /* Setting row relative banao taaki lock button position ho sake */
+  #settingsBody .setting-row {
+    position: relative !important;
+    padding-right: 36px !important;
+  }
+
+  /* Lock button — right side par chhota gol button */
+  .nm-lock-btn {
+    position: absolute;
+    top: 8px;
+    right: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--glass);
+    border: 1px solid var(--glass-bd);
+    color: var(--mt);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: all .2s ease;
+    z-index: 5;
+    flex: none;
+    line-height: 1;
+  }
+  .nm-lock-btn:hover {
+    background: rgba(99,102,241,.15);
+    border-color: var(--p);
+    color: var(--p);
+  }
+  .nm-lock-btn.nm-locked {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(245,158,11,.4);
+  }
+  .nm-lock-btn.nm-locked:hover {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+  }
+
+  /* Locked setting row — control disabled dikhe */
+  #settingsBody .setting-row.nm-locked-row {
+    opacity: .7;
+  }
+  #settingsBody .setting-row.nm-locked-row > *:not(.nm-lock-btn):not(.sl) {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+  }
+  #settingsBody .setting-row.nm-locked-row .switch,
+  #settingsBody .setting-row.nm-locked-row .slider,
+  #settingsBody .setting-row.nm-locked-row .seg,
+  #settingsBody .setting-row.nm-locked-row button,
+  #settingsBody .setting-row.nm-locked-row select,
+  #settingsBody .setting-row.nm-locked-row input {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+  }
+
+  /* Toast feedback */
+  #nmLockToast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: linear-gradient(135deg, #0f172a, #1e1b4b);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    z-index: 99999;
+    opacity: 0;
+    pointer-events: none;
+    transition: all .25s ease;
+    box-shadow: 0 12px 32px rgba(0,0,0,.35);
+  }
+  #nmLockToast.on {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+    var sb = document.getElementById('settingsBody');
+    if (!sb) { setTimeout(init, 300); return; }
+
+    // Locked settings storage
+    var LOCK_KEY = 'nm_lockedSettings';
+    var lockedSettings = [];
+    try { lockedSettings = JSON.parse(localStorage.getItem(LOCK_KEY) || '[]'); } catch (e) { lockedSettings = []; }
+
+    function saveLocked() {
+      try { localStorage.setItem(LOCK_KEY, JSON.stringify(lockedSettings)); } catch (e) {}
+    }
+
+    // Har setting row ke liye ek unique ID banao — label text se
+    function getRowId(row) {
+      var lb = row.querySelector('.lb');
+      if (lb) {
+        var txt = (lb.textContent || '').trim().replace(/\s+/g, ' ').substring(0, 60);
+        if (txt) return 'row_' + txt;
+      }
+      // Fallback: index based
+      var idx = Array.from(sb.querySelectorAll('.setting-row')).indexOf(row);
+      return 'row_idx_' + idx;
+    }
+
+    // Lock toast
+    var toast = document.getElementById('nmLockToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'nmLockToast';
+      document.body.appendChild(toast);
+    }
+    var toastTimer = null;
+    function showLockToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('on');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove('on'); }, 1500);
+    }
+
+    // Row par lock apply karo
+    function applyLockToRow(row, lockId, isLocked) {
+      var btn = row.querySelector('.nm-lock-btn');
+      if (!btn) return;
+      if (isLocked) {
+        row.classList.add('nm-locked-row');
+        btn.classList.add('nm-locked');
+        btn.textContent = '🔒';
+        btn.title = 'Unlock this setting';
+      } else {
+        row.classList.remove('nm-locked-row');
+        btn.classList.remove('nm-locked');
+        btn.textContent = '🔓';
+        btn.title = 'Lock this setting';
+      }
+    }
+
+    // Har row par lock button add karo
+    function addLockButtons() {
+      var rows = sb.querySelectorAll('.setting-row');
+      rows.forEach(function (row) {
+        // Already added?
+        if (row.querySelector('.nm-lock-btn')) {
+          // Update state
+          var lid = row.getAttribute('data-lock-id');
+          if (lid) applyLockToRow(row, lid, lockedSettings.indexOf(lid) >= 0);
+          return;
+        }
+        var lockId = getRowId(row);
+        row.setAttribute('data-lock-id', lockId);
+        var isLocked = lockedSettings.indexOf(lockId) >= 0;
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'nm-lock-btn' + (isLocked ? ' nm-locked' : '');
+        btn.textContent = isLocked ? '🔒' : '🔓';
+        btn.title = isLocked ? 'Unlock this setting' : 'Lock this setting';
+
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          e.preventDefault();
+          var idx = lockedSettings.indexOf(lockId);
+          if (idx >= 0) {
+            lockedSettings.splice(idx, 1);
+            applyLockToRow(row, lockId, false);
+            showLockToast('🔓 Setting unlocked');
+          } else {
+            lockedSettings.push(lockId);
+            applyLockToRow(row, lockId, true);
+            showLockToast('🔒 Setting locked');
+          }
+          saveLocked();
+          try { if (navigator.vibrate) navigator.vibrate(15); } catch (er) {}
+        });
+
+        row.appendChild(btn);
+        applyLockToRow(row, lockId, isLocked);
+      });
+    }
+
+    addLockButtons();
+
+    // Jab settings modal khule to dobara add karo (agar HTML rebuild ho)
+    var setOv = document.getElementById('setOv');
+    if (setOv) {
+      var obs = new MutationObserver(function () {
+        if (setOv.classList.contains('on')) setTimeout(addLockButtons, 30);
+      });
+      obs.observe(setOv, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    // Fallback: har 1.5 second par check (agar kuch naya add ho)
+    setInterval(function () {
+      if (setOv && setOv.classList.contains('on')) addLockButtons();
+    }, 1500);
+
+    console.log('✅ PATCH: Settings lock buttons ready');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
