@@ -5168,5 +5168,47 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== FIX: SETTINGS LOCK UNLOCK BUG ===== -->
+<style id="nm-setting-lock-fix-style">
+  /* Purane rule ko override karo — lock button ko exclude karo */
+  #settingsBody .setting-row.nm-locked-row button:not(.nm-lock-btn) {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+  }
+  #settingsBody .setting-row.nm-locked-row .switch,
+  #settingsBody .setting-row.nm-locked-row .slider,
+  #settingsBody .setting-row.nm-locked-row .seg,
+  #settingsBody .setting-row.nm-locked-row select,
+  #settingsBody .setting-row.nm-locked-row input {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+  }
+  /* Lock button hamesha clickable rahe */
+  #settingsBody .setting-row .nm-lock-btn,
+  #settingsBody .setting-row.nm-locked-row .nm-lock-btn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+  }
+  /* Row ke andar ke direct children par pointer-events none — lekin lock button exempt */
+  #settingsBody .setting-row.nm-locked-row > *:not(.nm-lock-btn):not(.sl) {
+    pointer-events: none !important;
+  }
+  #settingsBody .setting-row.nm-locked-row .sl {
+    pointer-events: auto !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    var sb = document.getElementById('settingsBody');
+    if (!sb) { setTimeout(init, 300); return; }
+
+    console.log('✅ FIX: Settings lock/unlock ready');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
