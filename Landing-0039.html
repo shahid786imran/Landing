@@ -2751,7 +2751,7 @@ window.saveToFirebase = async d => { if (!window.firebaseUser) return; try { las
 window.syncFromFirebase = async () => { if (!window.firebaseUser) return false; try { const s = await getDoc(doc(db, "notes", window.firebaseUser.uid)); if (s.exists()) { window.loadFromFirebase(s.data()); return true; } } catch (e) {} return false; };
 setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls && !ls.classList.contains("hide")) { console.warn("Timeout"); hideLoadingScreen(); } }, 8000);
 </script>
-<!-- ===== TOUCH SYSTEM FIX (Swipe + Empty Area Tap) ===== -->
+<!-- ===== CLEAN TOUCH SYSTEM ===== -->
 <script>
 (function () {
   function init() {
@@ -2759,103 +2759,96 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
       setTimeout(init, 300); return;
     }
 
-    var swipe = { active: false, x0: 0, y0: 0, dx: 0, dy: 0, startedEmpty: false };
+    function vibrate(ms) {
+      try { if (navigator.vibrate && localStorage.getItem('nm_vibrate') !== 'false') navigator.vibrate(ms || 15); } catch (e) {}
+    }
 
-    function hasOpenModal() {
-      return document.querySelector('.ov.on, .sheet-ov.on, .ctx-ov.on') !== null;
+    function gestureAction(action) {
+      if (!action || action === 'none') return;
+      if (action === 'filter' && window.openFilterSheet) window.openFilterSheet();
+      else if (action === 'context') { var cid = window._lastTouchedCard; if (cid && window.openQuickActions) window.openQuickActions(cid); else if (window.openSheet) window.openSheet(); }
+      else if (action === 'quickadd' && window.openAddMenu) window.openAddMenu();
+      else if (action === 'settings' && window.openSettings) window.openSettings();
+      else if (action === 'search' && window.openSearch) window.openSearch();
+      else if (action === 'archive') { if (typeof toggleArchive === 'function') toggleArchive(); }
+      else if (action === 'health' && window.openHealth) window.openHealth();
+      else if (action === 'stats' && window.openStats) window.openStats();
+      else if (action === 'dups' && window.openDupScan) window.openDupScan();
+      else if (action === 'folders' && window.openFolderMgr) window.openFolderMgr();
+      else if (action === 'leftpanel') window.openLeftPanel();
+      else if (action === 'rightpanel') window.openRightPanel();
     }
-    
-    function isBlockedTarget(e) {
-      var t = e.target;
-      if (!t) return true;
-      if (t.closest('button, .chk, input, textarea, select, a, .switch, .slider')) return true;
-      if (t.closest('.sheet-ov.on, .ov.on, .ctx-ov.on, .side-panel, .panel-fab, .multiselect-bar.on, .bin-bar.on')) return true;
-      return false;
-    }
-    
-    // Kya touch truly khaali jagah par hua? (kisi card/row/button ke andar NAHI)
-    function isTrulyEmpty(e) {
-      var t = e.target;
-      if (!t) return false;
-      if (t.closest('.card, .rw, .hh, .hcard, .folder-group, .folder-header, .folder-body, .standalone-headers')) return false;
-      if (t.closest('button, .chk, input, textarea, select, a, .switch, .slider, .panel-fab, .fab')) return false;
-      if (t.closest('.sheet-ov.on, .ov.on, .ctx-ov.on, .side-panel, .multiselect-bar.on, .bin-bar.on, .panel-backdrop.on')) return false;
-      if (t.closest('.smart-suggestion')) return false;
-      if (t.closest('.archive-entry, .archive-header-bar, .bin-info, .archive-clear')) return false;
+
+    function isTrulyEmpty(target) {
+      if (!target || !target.tagName) return false;
+      if (target.tagName === 'BODY' || target.tagName === 'HTML') return true;
+      if (target.id === 'cards' || target.id === 'smartSuggestionSlot') return true;
+      if (target.closest('.card, .rw, .hh, .hcard, .folder-group, .folder-header, .folder-body, .standalone-headers')) return false;
+      if (target.closest('button, .chk, input, textarea, select, a, .switch, .slider, .panel-item, .panel-fab, .fab')) return false;
+      if (target.closest('.ov.on, .sheet-ov.on, .ctx-ov.on, .side-panel, .multiselect-bar.on, .bin-bar.on')) return false;
+      if (target.closest('.smart-suggestion, .archive-entry, .archive-header-bar, .bin-info, .archive-clear')) return false;
       return true;
     }
 
+    var swipe = { active: false, x0: 0, y0: 0, dx: 0, dy: 0, empty: false };
+
     document.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 1) { swipe.active = false; return; }
-      if (hasOpenModal()) { swipe.active = false; return; }
-      if (typeof leftPanelOpen !== 'undefined' && leftPanelOpen) { swipe.active = false; return; }
-      if (typeof rightPanelOpen !== 'undefined' && rightPanelOpen) { swipe.active = false; return; }
-      if (typeof multiSelect !== 'undefined' && multiSelect.active) { swipe.active = false; return; }
-      if (typeof editAll !== 'undefined' && editAll) { swipe.active = false; return; }
-      if (isBlockedTarget(e)) { swipe.active = false; return; }
-      if (typeof itemLongPressFired !== 'undefined' && itemLongPressFired) { swipe.active = false; return; }
-      if (typeof cardLongPressFired !== 'undefined' && cardLongPressFired) { swipe.active = false; return; }
-      var t = e.touches[0];
-      swipe = { 
-        active: true, 
-        x0: t.clientX, y0: t.clientY, 
-        dx: 0, dy: 0, 
-        startedEmpty: isTrulyEmpty(e) 
-      };
+      var t = e.target;
+      if (!t) { swipe.active = false; return; }
+      if (document.querySelector('.ov.on, .sheet-ov.on, .ctx-ov.on, .side-panel.on')) { swipe.active = false; return; }
+      swipe.active = true;
+      swipe.x0 = e.touches[0].clientX;
+      swipe.y0 = e.touches[0].clientY;
+      swipe.dx = 0;
+      swipe.dy = 0;
+      swipe.empty = isTrulyEmpty(t);
     }, { passive: true });
 
     document.addEventListener('touchmove', function (e) {
       if (!swipe.active) return;
       if (e.touches.length !== 1) { swipe.active = false; return; }
-      var t = e.touches[0];
-      swipe.dx = t.clientX - swipe.x0;
-      swipe.dy = t.clientY - swipe.y0;
+      swipe.dx = e.touches[0].clientX - swipe.x0;
+      swipe.dy = e.touches[0].clientY - swipe.y0;
     }, { passive: true });
 
     document.addEventListener('touchend', function () {
       if (!swipe.active) return;
-      var dx = swipe.dx, dy = swipe.dy, startedEmpty = swipe.startedEmpty;
+      var dx = swipe.dx, dy = swipe.dy, empty = swipe.empty;
       swipe.active = false;
-      
       var absDx = Math.abs(dx), absDy = Math.abs(dy);
-      
-      // Case 1: Tap on TRULY EMPTY area (small movement)
-      if (startedEmpty && absDx < 10 && absDy < 10) {
-        if (typeof settings === 'undefined' || settings.emptyAreaGestures !== false) {
-          window._uiButtonsHidden = !window._uiButtonsHidden;
-          ['fab', 'leftPanelFab', 'rightPanelFab'].forEach(function(id) {
-            var el = document.getElementById(id);
-            if (!el) return;
-            el.style.transition = 'opacity 0.3s';
-            el.style.opacity = window._uiButtonsHidden ? '0' : '';
-            el.style.pointerEvents = window._uiButtonsHidden ? 'none' : '';
-          });
-        }
+
+      if (empty && absDx < 8 && absDy < 8) {
+        window._uiButtonsHidden = !window._uiButtonsHidden;
+        ['fab', 'leftPanelFab', 'rightPanelFab'].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (!el) return;
+          el.style.transition = 'opacity 0.25s';
+          el.style.opacity = window._uiButtonsHidden ? '0' : '';
+          el.style.pointerEvents = window._uiButtonsHidden ? 'none' : '';
+        });
         return;
       }
-      
-      // Case 2: Horizontal swipe → open panels
+
       if (absDx > 70 && absDx > absDy) {
         if (dx > 0) window.openLeftPanel();
         else window.openRightPanel();
-        if (typeof haptic === 'function') haptic(15);
+        vibrate(15);
         return;
       }
-      
-      // Case 3: Vertical swipe → gesture action
+
       if (absDy > 70 && absDy > absDx) {
-        if (typeof handleGestureAction === 'function' && typeof settings !== 'undefined') {
-          if (dy < 0) handleGestureAction(settings.swipeUp);
-          else handleGestureAction(settings.swipeDown);
-          if (typeof haptic === 'function') haptic(15);
-        }
+        var sUp = localStorage.getItem('nm_swipeUp') || 'quickadd';
+        var sDown = localStorage.getItem('nm_swipeDown') || 'archive';
+        gestureAction(dy < 0 ? sUp : sDown);
+        vibrate(15);
         return;
       }
     }, { passive: true });
 
     document.addEventListener('touchcancel', function () { swipe.active = false; }, { passive: true });
 
-    console.log('✅ Touch system (swipe + empty-area-tap) enabled');
+    console.log('✅ Clean touch system ready');
   }
   init();
 })();
