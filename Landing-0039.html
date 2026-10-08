@@ -5210,5 +5210,156 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== FIX: QUICK LINKS ICON RENDER (URL → IMG) ===== -->
+<style id="nm-ql-icon-fix-style">
+  #nmQuickLinksSec .panel-item .pi-icon {
+    flex: 0 0 22px !important;
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    font-size: 14px !important;
+    text-align: center !important;
+    line-height: 22px !important;
+    overflow: hidden !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+  #nmQuickLinksSec .panel-item .pi-icon img {
+    width: 18px !important;
+    height: 18px !important;
+    object-fit: contain !important;
+    border-radius: 3px !important;
+    display: block !important;
+  }
+  #nmQuickLinksSec .panel-item .pi-icon.nm-icon-fallback {
+    font-size: 14px !important;
+    color: var(--tx) !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+
+    // Safe icon render: agar URL/emoji hai to theek se dikhao
+    function renderIconHTML(icon) {
+      if (!icon) return '🔗';
+      var s = String(icon);
+      // Agar http/https URL hai
+      if (/^https?:\/\//i.test(s)) {
+        return '<img src="' + s.replace(/"/g, '&quot;') + '" onerror="this.style.display=\'none\';this.parentElement.textContent=\'🔗\';" alt="">';
+      }
+      // Agar data URL hai
+      if (/^data:image\//i.test(s)) {
+        return '<img src="' + s.replace(/"/g, '&quot;') + '" alt="">';
+      }
+      // Agar lamba text hai jo URL jaisa lagta hai (http, www, .com etc)
+      if (s.length > 10 && /^[a-z0-9.\-\/:]+$/i.test(s) && /\.[a-z]{2,}/i.test(s)) {
+        // URL jaisa text — emoji fallback do
+        return '🔗';
+      }
+      // Emoji ya chhota text — as-is return
+      return s;
+    }
+
+    // renderQuickLinks wrap — icon ko sahi render karo
+    if (typeof window.renderQuickLinks === 'function') {
+      var _orig = window.renderQuickLinks;
+      window.renderQuickLinks = function () {
+        _orig();
+        setTimeout(function () {
+          var sec = document.getElementById('nmQuickLinksSec');
+          if (!sec) return;
+          sec.querySelectorAll('[data-ql-idx]').forEach(function (btn) {
+            var idx = parseInt(btn.getAttribute('data-ql-idx'));
+            var q = window.quickLinks ? window.quickLinks[idx] : null;
+            if (!q) return;
+            var iconSpan = btn.querySelector('.pi-icon');
+            if (!iconSpan) return;
+
+            // Purana content hatao
+            iconSpan.innerHTML = '';
+            // Naya content daalo
+            var iconHtml = renderIconHTML(q.icon);
+            iconSpan.innerHTML = iconHtml;
+
+            // Agar URL tha aur img bani, to img par error handler
+            if (iconHtml.indexOf('<img') === 0) {
+              iconSpan.classList.remove('nm-icon-fallback');
+            } else {
+              // Emoji ya fallback
+              if (iconHtml === '🔗') iconSpan.classList.add('nm-icon-fallback');
+              else iconSpan.classList.remove('nm-icon-fallback');
+            }
+          });
+        }, 30);
+        setTimeout(function () {
+          // 2nd pass — kuch missed ho gaya ho to
+          var sec = document.getElementById('nmQuickLinksSec');
+          if (!sec) return;
+          sec.querySelectorAll('[data-ql-idx]').forEach(function (btn) {
+            var idx = parseInt(btn.getAttribute('data-ql-idx'));
+            var q = window.quickLinks ? window.quickLinks[idx] : null;
+            if (!q) return;
+            var iconSpan = btn.querySelector('.pi-icon');
+            if (!iconSpan) return;
+            // Agar iconSpan mein text hai jo URL jaisa lagta hai
+            var txt = (iconSpan.textContent || '').trim();
+            if (/^https?:\/\//i.test(txt) || (txt.length > 15 && /\//.test(txt))) {
+              iconSpan.innerHTML = renderIconHTML(q.icon);
+            }
+          });
+        }, 150);
+      };
+    }
+
+    // Purane patches ke addToQuickLinks ko bhi theek karo
+    if (typeof window.addToQuickLinks === 'function') {
+      var _origAdd = window.addToQuickLinks;
+      window.addToQuickLinks = function (cid, iid) {
+        // Pehle call karo
+        _origAdd(cid, iid);
+        // Phir icon fix karo last added item ka
+        setTimeout(function () {
+          if (!window.quickLinks || !window.quickLinks.length) return;
+          var last = window.quickLinks[window.quickLinks.length - 1];
+          if (last && (last.cardId === cid && last.itemId === iid)) {
+            var icon = last.icon;
+            // Agar icon URL hai to theek hai, warna emoji chhodo
+            // Lekin agar icon URL ki tarah lamba text hai to fallback emoji karo
+            if (icon && icon.length > 30 && !/^https?:\/\//i.test(icon) && !/^data:image/i.test(icon)) {
+              last.icon = '🔗';
+              try { localStorage.setItem('nm_quickLinks', JSON.stringify(window.quickLinks)); } catch (e) {}
+            }
+          }
+        }, 50);
+      };
+    }
+
+    // Har 2 second par ek baar scan karo
+    setInterval(function () {
+      var sec = document.getElementById('nmQuickLinksSec');
+      if (!sec) return;
+      sec.querySelectorAll('[data-ql-idx]').forEach(function (btn) {
+        var iconSpan = btn.querySelector('.pi-icon');
+        if (!iconSpan) return;
+        var txt = (iconSpan.textContent || '').trim();
+        if (/^https?:\/\//i.test(txt) && !iconSpan.querySelector('img')) {
+          // URL text dikh raha hai — img banao ya emoji fallback
+          var idx = parseInt(btn.getAttribute('data-ql-idx'));
+          var q = window.quickLinks ? window.quickLinks[idx] : null;
+          if (q) iconSpan.innerHTML = renderIconHTML(q.icon);
+        }
+      });
+    }, 2000);
+
+    console.log('✅ FIX: Quick Links icon render');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
