@@ -5599,5 +5599,77 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== FIX: CARD BORDER COLOR SELECTOR WORK ===== -->
+<style id="nm-card-border-final2-style">
+  /* Border colour CSS variable se aayega — default purple */
+  #cards .card .card-in {
+    border: 1px solid var(--nm-card-border-color, rgba(99,102,241,.25)) !important;
+  }
+  body.night #cards .card .card-in {
+    border: 1px solid var(--nm-card-border-color, rgba(255,255,255,.15)) !important;
+  }
+  #cards .card.header-card .card-in {
+    border: 1px solid var(--nm-header-border-color, rgba(99,102,241,.25)) !important;
+  }
+  body.night #cards .card.header-card .card-in {
+    border: 1px solid var(--nm-header-border-color, rgba(255,255,255,.15)) !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (typeof cards === 'undefined' || typeof getColorHex !== 'function') {
+      setTimeout(init, 300); return;
+    }
+
+    // Purane conflicting patches hatao
+    ['nm-card-border-all-sides-style', 'nm-card-border-show-style', 'nm-card-border-final-style', 'nm-header-border-1px-style'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.remove();
+    });
+
+    function applyBorder() {
+      document.querySelectorAll('#cards .card').forEach(function (cardEl) {
+        var cardIn = cardEl.querySelector('.card-in');
+        if (!cardIn) return;
+        var cid = parseInt(cardEl.getAttribute('data-cid'));
+        var c = cards.find(function (x) { return x.id === cid; });
+        if (!c) return;
+
+        if (c.color) {
+          var hex = getColorHex(c.color);
+          if (hex && hex !== 'transparent') {
+            // CSS variable set karo — !important ko bhi beat karega
+            cardIn.style.setProperty('--nm-card-border-color', hex);
+            return;
+          }
+        }
+        // Reset — CSS ka default use hone do
+        cardIn.style.removeProperty('--nm-card-border-color');
+      });
+    }
+
+    setTimeout(applyBorder, 200);
+
+    var _origRender = window.render;
+    window.render = function () {
+      _origRender();
+      setTimeout(applyBorder, 60);
+    };
+
+    // Colour change hone par turant apply ho
+    document.addEventListener('click', function (e) {
+      var chip = e.target.closest('.color-opt[onclick*="applyCardBorder"], .color-opt[data-c]');
+      if (chip) setTimeout(applyBorder, 150);
+    }, true);
+
+    setInterval(applyBorder, 3000);
+
+    console.log('✅ FIX: Card border color selector working');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
