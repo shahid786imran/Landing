@@ -3312,5 +3312,328 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== PATCH 1/5: GRID VIEW GRIDS SEPARATE ===== -->
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+
+    var style = document.createElement('style');
+    style.id = 'nm-grid-separate-style';
+    style.textContent = `
+      /* Grid view: har item alag dikhe — beech mein clear gap */
+      body.grid-view .lbody > div {
+        background: var(--bd) !important;
+        padding: 2px !important;
+        gap: 2px !important;
+        column-gap: 2px !important;
+        row-gap: 2px !important;
+      }
+      body.grid-view .lbody > div > .rw {
+        background: var(--s) !important;
+        border: 0 !important;
+        border-bottom: 0 !important;
+        margin: 0 !important;
+        border-radius: 6px !important;
+        overflow: hidden !important;
+      }
+      body.grid-view .lbody > div > .rw .inner {
+        background: var(--s) !important;
+        border: 0 !important;
+        border-radius: 6px !important;
+        height: 100% !important;
+        box-sizing: border-box !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,.08) !important;
+      }
+      body.grid-view .lbody > div > .rw:nth-child(odd) .inner {
+        background: var(--s) !important;
+      }
+      body.night.grid-view .lbody > div > .rw .inner {
+        box-shadow: 0 1px 3px rgba(0,0,0,.3) !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    console.log('✅ PATCH 1/5: Grid view grids separate ready');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH 2/5: CONTEXT MENU ADD/REMOVE RIGHT SIDE BAR ===== -->
+<script>
+(function () {
+  function init() {
+    if (typeof window.openItemContext !== 'function' || typeof cards === 'undefined') {
+      setTimeout(init, 300); return;
+    }
+
+    var _origOpenItemContext = window.openItemContext;
+
+    window.openItemContext = function (cid, iid) {
+      // Original call karo
+      _origOpenItemContext(cid, iid);
+
+      // Thoda wait karke Quick Links button add karo
+      setTimeout(function () {
+        var list = document.getElementById('ctxList');
+        if (!list) return;
+
+        // Pehle se added hai ya nahi
+        var inQL = (typeof window.isInQuickLinks === 'function') ? window.isInQuickLinks(cid, iid) : false;
+        var label = inQL ? 'Remove from Right Side Bar' : 'Add to Right Side Bar';
+        var icon = inQL ? '➖' : '➕';
+        var gradient = inQL ? 'linear-gradient(135deg,#ef4444,#b91c1c)' : 'linear-gradient(135deg,#0ea5e9,#0284c7)';
+
+        var btn = document.createElement('button');
+        btn.className = 'ctx-item';
+        btn.innerHTML = '<span class="ci-ic" style="background:' + gradient + '">' + icon + '</span><span class="ci-txt">' + label + '</span>';
+
+        btn.addEventListener('click', function () {
+          if (typeof window.toggleQuickLinks === 'function') {
+            window.toggleQuickLinks(cid, iid);
+          } else {
+            // Fallback: manual add/remove
+            if (!window.quickLinks) window.quickLinks = [];
+            var found = -1;
+            for (var i = 0; i < window.quickLinks.length; i++) {
+              if (window.quickLinks[i].cardId === cid && window.quickLinks[i].itemId === iid) { found = i; break; }
+            }
+            if (found >= 0) {
+              window.quickLinks.splice(found, 1);
+              if (typeof toast === 'function') toast('Removed from Quick Links');
+            } else {
+              var c = cards.find(function (x) { return x.id === cid; });
+              var it = c ? c.items.find(function (x) { return x.id === iid; }) : null;
+              if (c && it) {
+                window.quickLinks.push({
+                  cardId: cid, itemId: iid,
+                  title: it.title, url: it.url || '',
+                  icon: it.icon || '🔗',
+                  cardName: c.name || c.title || '',
+                  cardIcon: c.icon || '📁'
+                });
+                if (typeof toast === 'function') toast('✓ Added to Quick Links');
+              }
+            }
+            try { localStorage.setItem('nm_quickLinks', JSON.stringify(window.quickLinks)); } catch (e) {}
+            if (typeof window.renderQuickLinks === 'function') window.renderQuickLinks();
+          }
+          // Context menu band karo
+          var ctxOv = document.getElementById('ctxOv');
+          if (ctxOv) ctxOv.classList.remove('on');
+          if (typeof popModal === 'function') popModal();
+        });
+
+        // "Open" button ke baad add karo (index 1)
+        var first = list.firstChild;
+        if (first && first.nextSibling) {
+          list.insertBefore(btn, first.nextSibling);
+        } else {
+          list.appendChild(btn);
+        }
+      }, 80);
+    };
+
+    console.log('✅ PATCH 2/5: Context menu Add/Remove Quick Links ready');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH 3/5: GESTURE SETTINGS APPLY ===== -->
+<script>
+(function () {
+  function init() {
+    // Override setters to also save to localStorage with specific keys
+    if (typeof window.setTripleTap === 'function') {
+      var _origSetTripleTap = window.setTripleTap;
+      window.setTripleTap = function (v) {
+        _origSetTripleTap(v);
+        try { localStorage.setItem('nm_triple', v); } catch (e) {}
+      };
+    }
+    if (typeof window.setLongPress === 'function') {
+      var _origSetLongPress = window.setLongPress;
+      window.setLongPress = function (v) {
+        _origSetLongPress(v);
+        try { localStorage.setItem('nm_longPress', v); } catch (e) {}
+      };
+    }
+    if (typeof window.setSwipeUp === 'function') {
+      var _origSetSwipeUp = window.setSwipeUp;
+      window.setSwipeUp = function (v) {
+        _origSetSwipeUp(v);
+        try { localStorage.setItem('nm_swipeUp', v); } catch (e) {}
+      };
+    }
+    if (typeof window.setSwipeDown === 'function') {
+      var _origSetSwipeDown = window.setSwipeDown;
+      window.setSwipeDown = function (v) {
+        _origSetSwipeDown(v);
+        try { localStorage.setItem('nm_swipeDown', v); } catch (e) {}
+      };
+    }
+
+    // Sync current settings to localStorage (in case already set)
+    if (typeof settings !== 'undefined') {
+      try { localStorage.setItem('nm_triple', settings.tripleTap || 'settings'); } catch (e) {}
+      try { localStorage.setItem('nm_longPress', settings.longPress || 'filter'); } catch (e) {}
+      try { localStorage.setItem('nm_swipeUp', settings.swipeUp || 'quickadd'); } catch (e) {}
+      try { localStorage.setItem('nm_swipeDown', settings.swipeDown || 'archive'); } catch (e) {}
+    }
+
+    // Ensure handleGestureAction is globally accessible
+    if (typeof handleGestureAction === 'function' && !window.handleGestureAction) {
+      window.handleGestureAction = handleGestureAction;
+    }
+
+    console.log('✅ PATCH 3/5: Gesture settings applied');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH 4/5: FOLDER/TAG TEXT VS ARROW CLICK ===== -->
+<script>
+(function () {
+  function init() {
+    var foldersBtn = document.getElementById('lpFoldersBtn');
+    var tagsBtn = document.getElementById('lpTagsBtn');
+
+    if (!foldersBtn || !tagsBtn) {
+      setTimeout(init, 300); return;
+    }
+
+    // Folder button
+    foldersBtn.onclick = null;
+    foldersBtn.addEventListener('click', function (e) {
+      var arrow = document.getElementById('lpArrowFolders');
+      if (arrow && (e.target === arrow || arrow.contains(e.target))) {
+        // Arrow click → expand/collapse
+        if (typeof window.toggleLeftSub === 'function') {
+          window.toggleLeftSub('folders');
+        }
+      } else {
+        // Text click → All Cards filter
+        if (typeof window.panelGoFolder === 'function') {
+          window.panelGoFolder('all');
+        } else {
+          currentFolder = 'all';
+          currentFolderLabel = 'All Cards';
+          if (typeof save === 'function') save();
+          if (typeof render === 'function') render();
+          if (typeof closeAllPanels === 'function') closeAllPanels();
+        }
+      }
+    });
+
+    // Tag button
+    tagsBtn.onclick = null;
+    tagsBtn.addEventListener('click', function (e) {
+      var arrow = document.getElementById('lpArrowTags');
+      if (arrow && (e.target === arrow || arrow.contains(e.target))) {
+        // Arrow click → expand/collapse
+        if (typeof window.toggleLeftSub === 'function') {
+          window.toggleLeftSub('tags');
+        }
+      } else {
+        // Text click → All Cards filter
+        if (typeof window.panelGo === 'function') {
+          window.panelGo('all');
+        } else {
+          currentFilter = 'all';
+          currentFilterLabel = '';
+          if (typeof updateFabFilter === 'function') updateFabFilter();
+          if (typeof save === 'function') save();
+          if (typeof render === 'function') render();
+          if (typeof closeAllPanels === 'function') closeAllPanels();
+        }
+      }
+    });
+
+    // Arrow ke liye alag click area — taaki zyada asaan ho
+    [['lpArrowFolders', 'folders'], ['lpArrowTags', 'tags']].forEach(function (pair) {
+      var arrowEl = document.getElementById(pair[0]);
+      if (!arrowEl) return;
+      arrowEl.style.cursor = 'pointer';
+      arrowEl.style.padding = '4px 8px';
+      arrowEl.style.margin = '-4px -4px -4px 0';
+      arrowEl.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (typeof window.toggleLeftSub === 'function') {
+          window.toggleLeftSub(pair[1]);
+        }
+      });
+    });
+
+    console.log('✅ PATCH 4/5: Folder/Tag text vs arrow click ready');
+  }
+  init();
+})();
+</script>
+<!-- ===== PATCH 5/5: PC PAR BUTTONS HIDE NA HON ===== -->
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+
+    // Touch device detect karo
+    var isTouchDevice = ('ontouchstart' in window) ||
+                        (navigator.maxTouchPoints > 0) ||
+                        (navigator.msMaxTouchPoints > 0);
+
+    if (isTouchDevice) {
+      console.log('✅ PATCH 5/5: Touch device detected — B3 toggle allowed');
+      return; // Touch device par B3 waise hi kaam karega
+    }
+
+    // PC/Laptop — buttons permanently show rakho
+    // FAB aur panel buttons ko force visible karo
+    function forceShowButtons() {
+      var fab = document.getElementById('fab');
+      var lp = document.getElementById('leftPanelFab');
+      var rp = document.getElementById('rightPanelFab');
+
+      if (fab) {
+        if (typeof settings !== 'undefined' && settings.fabVisible === false) return;
+        fab.style.opacity = '1';
+        fab.style.pointerEvents = 'auto';
+      }
+      if (lp) {
+        if (typeof settings !== 'undefined' && settings.leftPanelEnabled === false) return;
+        lp.style.opacity = '1';
+        lp.style.pointerEvents = 'auto';
+      }
+      if (rp) {
+        if (typeof settings !== 'undefined' && settings.rightPanelEnabled === false) return;
+        rp.style.opacity = '1';
+        rp.style.pointerEvents = 'auto';
+      }
+    }
+
+    forceShowButtons();
+
+    // Agar koi click ke baad hide ho jaye to wapas show kar do
+    document.addEventListener('click', function () {
+      setTimeout(forceShowButtons, 10);
+    }, true);
+
+    // MutationObserver se bhi monitor karo
+    try {
+      var observer = new MutationObserver(function () {
+        forceShowButtons();
+      });
+      ['fab', 'leftPanelFab', 'rightPanelFab'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) observer.observe(el, { attributes: true, attributeFilter: ['style'] });
+      });
+    } catch (e) {}
+
+    // window._uiButtonsHidden ko permanently false rakho PC par
+    window._uiButtonsHidden = false;
+
+    console.log('✅ PATCH 5/5: PC mode — buttons permanently visible');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
