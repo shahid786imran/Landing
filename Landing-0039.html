@@ -5820,5 +5820,32 @@ setTimeout(() => { const ls = document.getElementById("loadingScreen"); if (ls &
   init();
 })();
 </script>
+<!-- ===== FIX: GRID VIEW AUTO-FILL LAST ROW ===== -->
+<style id="nm-grid-flex-fill-style">
+  /* Grid ki jagah flexbox — last row ke items stretch ho jayenge */
+  body.grid-view .lbody > div {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 2px !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+  body.grid-view .lbody > div > .rw {
+    flex: 1 1 calc((100% / var(--grid-cols, 2)) - 2px) !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+</style>
+
+<script>
+(function () {
+  function init() {
+    if (!document.body) { setTimeout(init, 200); return; }
+    console.log('✅ FIX: Grid view auto-fill last row');
+  }
+  init();
+})();
+</script>
 </body>
 </html>
